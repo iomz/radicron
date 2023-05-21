@@ -10,6 +10,7 @@ import (
 
 	//"regexp"
 	"runtime/debug"
+	"strings"
 	//"time"
 
 	"github.com/spf13/viper"
@@ -56,41 +57,40 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// enable and set the auth_token internally
-	authToken, err := client.AuthorizeToken(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-	_ = authToken
+	// enter with timer
 	// get programs data
 	stations, err := client.GetNowPrograms(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
-	for s := range stations {
-		fmt.Printf("%v", s)
-	}
+	for _, st := range stations {
+		for _, p := range st.Scd.Progs.Progs {
+			log.Printf("[%v] %v %v", st.ID, p.Ft, p.Title)
+			// check the programs
+			programs := viper.GetStringMap("programs")
+			for program := range programs {
+				lastSaved := viper.GetString(fmt.Sprintf("programs.%s.last-saved", program))
+				station := viper.GetString(fmt.Sprintf("programs.%s.station", program))
+				keyword := viper.GetString(fmt.Sprintf("programs.%s.keyword", program))
+				log.Printf("Checking %s: %s", program, keyword)
 
-	// check the programs
-	programs := viper.GetStringMap("programs")
-	for program := range programs {
-		lastSaved := viper.GetString(fmt.Sprintf("programs.%s.last-saved", program))
-		areaID := viper.GetString(fmt.Sprintf("programs.%s.area-id", program))
-		station := viper.GetString(fmt.Sprintf("programs.%s.station", program))
-		keyword := viper.GetString(fmt.Sprintf("programs.%s.keyword", program))
-		log.Printf("Checking %s: %s", program, keyword)
+				if st.ID != station {
+					continue
+				}
+				var title, start string
+				if strings.Contains(p.Title, keyword) {
+					title = p.Title
+					start = p.Ft
+				}
+				log.Printf("Found %s at [%s] %s", title, station, start)
+				// TODO: dispatch recording
 
-		title := ""
-		latest := ""
-		start := ""
-		log.Printf("Found %s (%s) on %s:%s %s", title, latest, areaID, station, start)
-
-		if latest != lastSaved {
-			viper.Set(fmt.Sprintf("programs.%s.last-saved", program), latest)
+				if start != lastSaved {
+					viper.Set(fmt.Sprintf("programs.%s.last-saved", program), start)
+				}
+				// write out the config
+				viper.WriteConfig()
+			} // programs end
 		}
-	} // programs end
-
-	// Wrap-up
-	log.Println("All the programs checked - exit saving the config")
-	viper.WriteConfig()
+	}
 }

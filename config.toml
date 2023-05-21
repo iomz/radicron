@@ -1,7 +1,5 @@
-
 [programs]
-
-  [programs.saraba]
-    keyword = "さらば青春の光がTaダ、Baカ、Saワギ"
-    last-saved = ""
-
+[programs.saraba]
+keyword = 'さらば青春の光がTaダ、Baカ、Saワギ'
+last-saved = ''
+station = 'TBS'
