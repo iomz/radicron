@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  radiko-auto-downloader:
+    build: .
+    container_name: radiko-auto-downloader
+    volumes:
+      - ./config.toml:/app/config.toml
+      - ./downloads:/downloads
