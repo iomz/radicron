@@ -1,9 +1,9 @@
 version: "3.9"
 services:
-  radiko-auto-recorder:
-    image: radiko-auto-recorder:latest
-    container_name: radiko-auto-recorder
+  radiko-auto-downloader:
+    build: .
+    container_name: radiko-auto-downloader
     volumes:
       - ./config.toml:/app/config.toml
-      - ./downloads:/app/downloads
+      - ./downloads:/downloads
       - ./vendor:/build/vendor

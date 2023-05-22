@@ -1,5 +1,26 @@
+area-id = 'JP13'
+areaid = 'JP13'
+check-interval-days = 1
+
 [programs]
-[programs.saraba]
+[programs.fmt]
+[programs.fmt.airship]
+keyword = 'GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～'
+last-saved = '20230520110000'
+
+[programs.fmt.darehana]
+keyword = '山崎怜奈の誰かに話したかったこと。'
+last-saved = '20230522130000'
+
+[programs.fmt.fmrohee]
+keyword = 'トーキョー・エフエムロヒー'
+last-saved = '20230519120000'
+
+[programs.tbs]
+[programs.tbs.odoriba]
+keyword = '空気階段の踊り場'
+last-saved = '20230516000000'
+
+[programs.tbs.saraba]
 keyword = 'さらば青春の光がTaダ、Baカ、Saワギ'
-last-saved = ''
-station = 'TBS'
+last-saved = '20230521030000'

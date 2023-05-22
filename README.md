@@ -1,17 +1,13 @@
-## radiko-crawler
+## radiko-auto-downloader
 
-# Prep
-
-You need to download `geckodriver` ([link](https://github.com/mozilla/geckodriver)) and `selenium-server.jar` ([link](https://www.selenium.dev/downloads/)) in the `driver` directory.
-
-# Build
+# build
 
 ```
 go mod vendor
-docker build --rm -t radiko-crawler:latest -f Dockerfile .
+docker compose build
 ```
 
-# Run
+# run
 
 ```
 docker-compose up
