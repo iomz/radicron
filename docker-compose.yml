@@ -2,6 +2,7 @@ version: "3.9"
 services:
   radiko-auto-downloader:
     build: .
+    image: iomz/radiko-auto-downloader:latest
     container_name: radiko-auto-downloader
     restart: unless-stopped
     volumes:

@@ -1,11 +1,22 @@
-# radiko-auto-downloader
+**radiko-auto-downloader**
 
 [![GoDoc](https://godoc.org/github.com/iomz/radiko-auto-downloader?status.svg)](https://godoc.org/github.com/iomz/radiko-auto-downloader)
 [![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radiko-auto-downloader)](https://goreportcard.com/report/github.com/iomz/radiko-auto-downloader)
+[![codecov](https://codecov.io/gh/iomz/radiko-auto-downloader/branch/main/graph/badge.svg?token=fjhUp7BLPB)](https://codecov.io/gh/iomz/radiko-auto-downloader)
 [![Docker](https://github.com/iomz/radiko-auto-downloader/actions/workflows/docker.yml/badge.svg)](https://github.com/iomz/radiko-auto-downloader/actions/workflows/docker.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically downloaded locally.
+Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally.
+
+---
+
+<!--toc:start-->
+
+- [Configuration](#configuration)
+- [Try with Docker](#try-with-docker)
+  - [Build the image yourself](#build-the-image-yourself)
+- [Credit](#credit)
+<!--toc:end-->
 
 # Configuration
 
@@ -22,19 +33,20 @@ interval = '168h' # fetch every 7 days
 title = 'GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～' # this can be a partial match
 ```
 
+In addition, set `${RADIGO_HOME}` to set the download directory.
+
 # Try with Docker
 
-## Build
+By default, it mounts `./config.toml` and `./downloads` to the container.
 
+```console
+docker-compose up
 ```
-go mod vendor
+
+## Build the image yourself
+
+```console
 docker compose build
-```
-
-## Run
-
-```
-docker-compose up -d
 ```
 
 # Credit
