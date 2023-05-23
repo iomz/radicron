@@ -27,15 +27,16 @@ Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they
 
 You first need to create a configuration file (`config.toml`) to list programs to look for:
 
-```toml
-area-id = 'JP13'  # default to the "kanto" region
-interval = '168h' # fetch every 7 days
+```yaml
+area-id: JP13 # default to the "kanto" region
+interval: 168h # fetch every 7 days (Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h" and must be positive)
 
-[programs]
-[programs.fmt.airship]
-# the 2nd key `fmt` is the staion_id
-# the 3rd key `airship` can be anything of your likes
-title = 'GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～' # this can be a partial match
+rules:
+  airship: # name your rule as you like
+    station-id: FMT # (optional) the staion_id
+    title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～" # this can be a partial match
+  hiccorohee:
+    keyword: "ヒコロヒー" # search all the metadata
 ```
 
 In addition, set `${RADIGO_HOME}` to set the download directory.

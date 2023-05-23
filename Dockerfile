@@ -16,9 +16,9 @@ FROM alpine:latest
 
 # install some required binaries
 RUN apk add --no-cache ca-certificates \
-  ffmpeg \
-  rtmpdump \
-  tzdata
+    ffmpeg \
+    rtmpdump \
+    tzdata
 
 COPY --from=build /build/radiko-auto-downloader /app/radiko-auto-downloader
 
@@ -29,4 +29,4 @@ ENV RADIGO_HOME "/downloads"
 VOLUME ["/downloads"]
 
 ENTRYPOINT ["/app/radiko-auto-downloader"]
-CMD ["-c", "/app/config.toml"]
+CMD ["-c", "/app/config.yml"]

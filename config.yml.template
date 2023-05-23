@@ -1,0 +1,8 @@
+area-id: JP13
+interval: 168h
+rules:
+    airship:
+        station-id: FMT
+        title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～"
+    hiccorohee:
+        keyword: "ヒコロヒー"

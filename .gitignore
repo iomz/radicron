@@ -21,7 +21,8 @@ vendor/
 go.work
 
 # config
-config.toml
+config.yml
+config.yaml
 
 # downloads
 downloads/
@@ -30,4 +31,3 @@ output/
 # misc
 *.bak
 .DS_Store
-
