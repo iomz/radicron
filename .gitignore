@@ -26,3 +26,8 @@ config.toml
 # downloads
 downloads/
 output/
+
+# misc
+*.bak
+.DS_Store
+
