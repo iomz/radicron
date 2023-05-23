@@ -4,10 +4,9 @@ LABEL maintainer="Iori Mizutani <iori.mizutani@gmail.com>"
 
 # build the app
 RUN mkdir -p /build
-COPY vendor /build/
 COPY go.mod /build/
 COPY go.sum /build/
-COPY main.go /build/
+COPY *.go /build/
 WORKDIR /build
 RUN go mod vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o radiko-auto-downloader .

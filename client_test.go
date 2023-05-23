@@ -11,7 +11,8 @@ func TestNewRadikoClient(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	if client.AreaID() != areaID {
+	if client.AreaID() != "OUT" && // the GitHub Action runner is outside Japan
+		client.AreaID() != areaID {
 		t.Errorf("client was configured with a wrong AreaID %v", client.AreaID())
 	}
 }

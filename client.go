@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/yyoshiki41/go-radiko"
@@ -28,14 +27,14 @@ func NewRadikoClient(ctx context.Context, areaID string) (*radiko.Client, error)
 
 	// When currentAreaID is not the same as the given areaID
 	// we cannot download any programs
-	// TODO: login with a premium account
 	if areaID != "" && areaID != currentAreaID {
 		client.SetAreaID(areaID)
-		return nil, fmt.Errorf(
-			"the specified area-id (%s) differs from your location's area-id (%s)",
+		log.Printf("the specified area-id (%s) differs from your location's area-id (%s)",
 			areaID,
 			currentAreaID,
 		)
+		// TODO: login with a premium account
+		return client, nil
 	}
 
 	// authorize the token
