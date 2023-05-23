@@ -141,6 +141,7 @@ func main() {
 	// Set the config location
 	cwd, _ := os.Getwd()
 	conf := flag.String("c", "config.yml", "the config.yml to use.")
+	enableDebug := flag.Bool("d", false, "enable debug mode.")
 	version := flag.Bool("v", false, "print version.")
 	flag.Parse()
 
@@ -152,8 +153,16 @@ func main() {
 	}
 
 	// to change the flags on the default logger
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	if *enableDebug {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	}
+
 	log.Println("starting radiko-auto-downloader")
+
+	// check ${RADIGO_HOME}
+	if len(os.Getenv("RADIGO_HOME")) == 0 {
+		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "./downloads"))
+	}
 
 	// load config
 	if *conf != "config.yml" {
