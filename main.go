@@ -22,7 +22,7 @@ var (
 	location *time.Location
 )
 
-func run(ctx context.Context, client *radiko.Client) {
+func run(ctx context.Context, client *radiko.Client, interval string) {
 	// save the current time
 	currentTime := time.Now().In(location)
 
@@ -52,7 +52,7 @@ func run(ctx context.Context, client *radiko.Client) {
 				lastSavedTime, _ = time.Parse(time.RFC3339, time.RFC3339)
 			}
 			title := viper.GetString(fmt.Sprintf("programs.%s.%s.title", stationID, ts))
-			log.Printf("checking %s: [%s]%s", ts, stationID, title)
+			log.Printf("searching for [%s]%s", stationID, title)
 
 			for _, p := range weeklyPrograms[0].Progs.Progs {
 				var start string
@@ -126,6 +126,11 @@ func run(ctx context.Context, client *radiko.Client) {
 	if err := viper.WriteConfig(); err != nil {
 		log.Fatal(err)
 	}
+	delta, err := time.ParseDuration(interval)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("fetching completed – sleeping until %v", currentTime.Add(delta))
 }
 
 func main() {
@@ -193,7 +198,7 @@ func main() {
 
 	// put the runner to a scheduler
 	s := gocron.NewScheduler(location)
-	job, err := s.Every(interval).Do(run, ctx, client)
+	job, err := s.Every(interval).Do(run, ctx, client, interval)
 	if err != nil {
 		log.Fatalf("job: %v, error: %v", job, err)
 	}

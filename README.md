@@ -1,4 +1,4 @@
-**radiko-auto-downloader**
+**_radiko-auto-downloader_**
 
 [![GoDoc](https://godoc.org/github.com/iomz/radiko-auto-downloader?status.svg)](https://godoc.org/github.com/iomz/radiko-auto-downloader)
 [![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radiko-auto-downloader)](https://goreportcard.com/report/github.com/iomz/radiko-auto-downloader)
@@ -7,6 +7,11 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally.
+
+**Disclaimer**:
+
+- Only works with an IP address within Japan (currently).
+- Do not use this program for commercial purposes.
 
 ---
 
