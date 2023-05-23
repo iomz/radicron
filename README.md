@@ -10,7 +10,7 @@ Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they
 
 **Disclaimer**:
 
-- Only works with an IP address within Japan (currently).
+- Only works from an IP address within Japan (currently).
 - Do not use this program for commercial purposes.
 
 ---
@@ -52,7 +52,7 @@ docker-compose up
 
 ## Build the image yourself
 
-In case the [image](https://hub.docker.com/r/iomz/radiko-auto-downloader) is not available for your platform:
+In case the [image](https://hub.docker.com/r/iomz/radiko-auto-downloader/tags) is not available for your platform:
 
 ```console
 docker compose build
