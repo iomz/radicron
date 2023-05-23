@@ -3,6 +3,7 @@ services:
   radiko-auto-downloader:
     build: .
     container_name: radiko-auto-downloader
+    restart: unless-stopped
     volumes:
       - ./config.toml:/app/config.toml
       - ./downloads:/downloads
