@@ -196,7 +196,7 @@ func main() {
 	}
 
 	// set the default area_id
-	viper.SetDefault("areaID", "JP13")
+	viper.SetDefault("area-id", "JP13")
 	// set the default interval as weekly
 	viper.SetDefault("check-interval-days", 7)
 
@@ -236,6 +236,7 @@ func main() {
 		var wg sync.WaitGroup
 		for stationID := range programs {
 			// TODO: check the stationID is valid
+			// TODO: use * for all the avaialable stationID
 			stationID = strings.ToUpper(stationID)
 
 			// Fetch the weekly program
@@ -253,12 +254,13 @@ func main() {
 				if err != nil { // set the lastSavedTime as RFC3389
 					lastSavedTime, _ = time.Parse(time.RFC3339, time.RFC3339)
 				}
-				keyword := viper.GetString(fmt.Sprintf("programs.%s.%s.keyword", stationID, ts))
-				log.Printf("checking %s: [%s]%s", ts, stationID, keyword)
+				title := viper.GetString(fmt.Sprintf("programs.%s.%s.title", stationID, ts))
+				log.Printf("checking %s: [%s]%s", ts, stationID, title)
 
 				for _, p := range weeklyPrograms[0].Progs.Progs {
-					var title, start string
-					if strings.Contains(p.Title, keyword) {
+					var start string
+					// TODO: other matching methods
+					if strings.Contains(p.Title, title) {
 						title = p.Title
 						start = p.Ft
 
