@@ -25,7 +25,7 @@ Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they
 
 # Configuration
 
-You first need to create a configuration file (`config.toml`) to list programs to look for:
+You first need to create a configuration file (`config.yml`) to list programs to look for:
 
 ```yaml
 area-id: JP13 # default to the "kanto" region
@@ -37,19 +37,22 @@ rules:
     title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～" # this can be a partial match
   hiccorohee:
     keyword: "ヒコロヒー" # search all the metadata
+    area-id: JP13 # optional
 ```
 
 In addition, set `${RADIGO_HOME}` to set the download directory.
 
 # Try with Docker
 
-By default, it mounts `./config.toml` and `./downloads` to the container.
+By default, it mounts `./config.yml` and `./downloads` to the container.
 
 ```console
 docker-compose up
 ```
 
 ## Build the image yourself
+
+In case the [image](https://hub.docker.com/r/iomz/radiko-auto-downloader) is not available for your platform:
 
 ```console
 docker compose build
