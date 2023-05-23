@@ -1,4 +1,4 @@
 area-id = 'JP13'
-check-interval-days = 7
+interval = '168h'
 
 [programs]

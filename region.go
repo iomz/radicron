@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -11,7 +11,9 @@ type Region struct {
 }
 
 type Stations struct {
-	Stations []Station `xml:"station"`
+	Stations   []Station `xml:"station"`
+	RegionID   string    `xml:"region_id,attr"`
+	RegionName string    `xml:"region_name,attr"`
 }
 
 type Station struct {
@@ -32,7 +34,7 @@ func GetRegion() (Region, error) {
 	if err != nil {
 		return region, err
 	}
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return region, err
 	}
@@ -45,17 +47,3 @@ func GetRegion() (Region, error) {
 
 	return region, nil
 }
-
-/*
-func main() {
-	region, err := GetRegion()
-	if err != nil {
-		panic(err)
-	}
-	for _, stations := range region.Region {
-		for _, station := range stations.Stations {
-			fmt.Println(station.Name)
-		}
-	}
-}
-*/
