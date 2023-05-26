@@ -63,10 +63,14 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 
 			for _, p := range weeklyPrograms[0].Progs.Progs {
 				var start, title string
+				// TODO: rewrite the branching nicer
 				if r.HasTitle() && strings.Contains(p.Title, r.Title) {
 					title = p.Title
 					start = p.Ft
 				} else if r.HasKeyword() {
+					// TODO: search for tags
+					//for _, tag := range p.Tags
+					// TODO: rewrite the matching nicer
 					if strings.Contains(p.Title, r.Keyword) ||
 						strings.Contains(p.SubTitle, r.Keyword) ||
 						strings.Contains(p.Desc, r.Keyword) ||
@@ -92,12 +96,12 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 
 				output, err := radigo.NewOutputConfig(
 					fmt.Sprintf(
-						"%s-%s_%s",
-						startTime.In(location).Format(DatetimeLayout),
+						"%s_%s_%s",
+						startTime.In(location).Format(OutputDatetimeLayout),
 						stationID,
 						title,
 					),
-					radigo.AudioFormatAAC,
+					radigo.AudioFormatM4A,
 				)
 				if err != nil {
 					log.Fatalf("failed to configure output: %s", err)
@@ -117,12 +121,13 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 				// record the timeshift recording
 				uri, err := client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)
 				if err != nil {
-					log.Fatalf("failed to get playlist.m3u8: %s", err)
+					log.Printf("failed to get playlist.m3u8: %s", err)
+					continue
 				}
 
 				// detach the download job
 				wg.Add(1)
-				go DownloadProgram(ctx, &wg, uri, output)
+				go DownloadProgram(ctx, &wg, p, uri, output)
 			} // programs
 		} // rules
 	} // stations

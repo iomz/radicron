@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/bogem/id3v2"
 	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
 )
@@ -76,6 +77,7 @@ func downloadLink(link, output string) error {
 func DownloadProgram(
 	ctx context.Context, // the context for the request
 	wg *sync.WaitGroup, // the wg to notify
+	prog radiko.Prog, // the program metadata
 	uri string, // the m3u8 URI for the program
 	output *radigo.OutputConfig, // the file configuration
 ) {
@@ -104,11 +106,38 @@ func DownloadProgram(
 		return
 	}
 
-	err = os.Rename(concatedFile, output.AbsPath())
+	err = radigo.ConvertAACtoM4A(ctx, concatedFile, output.AbsPath())
 	if err != nil {
 		log.Printf(
 			"Failed to output a result file: %s", err)
 		return
 	}
+	if err != nil {
+		log.Printf("Failed to open the output file: %s", err)
+		return
+	}
+	tag, err := id3v2.Open(output.AbsPath(), id3v2.Options{Parse: true})
+	if err != nil {
+		log.Fatal("Error while opening the output file: ", err)
+	}
+	defer tag.Close()
+
+	// Set tags
+	tag.SetTitle(output.FileBaseName)
+	tag.SetArtist(prog.Pfm)
+	tag.SetAlbum(prog.Title)
+	tag.SetYear(prog.Ft)
+	tag.AddCommentFrame(id3v2.CommentFrame{
+		Encoding:    id3v2.EncodingUTF8,
+		Language:    "jpn",
+		Description: prog.Info,
+	})
+
+	// write tag to the aac
+	if err = tag.Save(); err != nil {
+		log.Fatal("Error while saving a tag: ", err)
+	}
+
+	// finish downloading the file
 	log.Printf("+file saved: %s", output.AbsPath())
 }

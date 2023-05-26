@@ -3,11 +3,14 @@ module github.com/iomz/radiko-auto-downloader
 go 1.20
 
 require (
+	github.com/bogem/id3v2 v1.2.0
 	github.com/go-co-op/gocron v1.27.1
 	github.com/spf13/viper v1.15.0
 	github.com/yyoshiki41/go-radiko v0.9.0
 	github.com/yyoshiki41/radigo v0.12.0
 )
+
+replace github.com/yyoshiki41/radigo => github.com/iomz/radigo v0.0.0-20230526215044-71f77b42b4a9
 
 require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
