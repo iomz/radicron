@@ -1,9 +1,9 @@
-**_radiko-auto-downloader_**
+**_radicron_**
 
-[![GoDoc](https://godoc.org/github.com/iomz/radiko-auto-downloader?status.svg)](https://godoc.org/github.com/iomz/radiko-auto-downloader)
-[![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radiko-auto-downloader)](https://goreportcard.com/report/github.com/iomz/radiko-auto-downloader)
-[![codecov](https://codecov.io/gh/iomz/radiko-auto-downloader/branch/main/graph/badge.svg?token=fjhUp7BLPB)](https://codecov.io/gh/iomz/radiko-auto-downloader)
-[![Docker](https://github.com/iomz/radiko-auto-downloader/actions/workflows/docker.yml/badge.svg)](https://github.com/iomz/radiko-auto-downloader/actions/workflows/docker.yml)
+[![GoDoc](https://godoc.org/github.com/iomz/radicron?status.svg)](https://godoc.org/github.com/iomz/radicron)
+[![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radicron)](https://goreportcard.com/report/github.com/iomz/radicron)
+[![codecov](https://codecov.io/gh/iomz/radicron/branch/main/graph/badge.svg?token=fjhUp7BLPB)](https://codecov.io/gh/iomz/radicron)
+[![Docker](https://github.com/iomz/radicron/actions/workflows/docker.yml/badge.svg)](https://github.com/iomz/radicron/actions/workflows/docker.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally.
@@ -52,7 +52,7 @@ docker-compose up
 
 ## Build the image yourself
 
-In case the [image](https://hub.docker.com/r/iomz/radiko-auto-downloader/tags) is not available for your platform:
+In case the [image](https://hub.docker.com/r/iomz/radicron/tags) is not available for your platform:
 
 ```console
 docker compose build

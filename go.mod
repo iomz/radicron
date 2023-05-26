@@ -1,4 +1,4 @@
-module github.com/iomz/radiko-auto-downloader
+module github.com/iomz/radicron
 
 go 1.20
 

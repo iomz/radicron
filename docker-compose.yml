@@ -1,9 +1,9 @@
 version: "3.9"
 services:
-  radiko-auto-downloader:
+  radicron:
     build: .
-    image: iomz/radiko-auto-downloader:latest
-    container_name: radiko-auto-downloader
+    image: iomz/radicron:latest
+    container_name: radicron
     restart: unless-stopped
     volumes:
       - ./config.yml:/app/config.yml

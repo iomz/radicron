@@ -9,7 +9,7 @@ COPY go.sum /build/
 COPY *.go /build/
 WORKDIR /build
 RUN go mod vendor
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o radiko-auto-downloader .
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o radicron .
 
 # export to a single layer image
 FROM alpine:latest
@@ -20,7 +20,7 @@ RUN apk add --no-cache ca-certificates \
     rtmpdump \
     tzdata
 
-COPY --from=build /build/radiko-auto-downloader /app/radiko-auto-downloader
+COPY --from=build /build/radicron /app/radicron
 
 # set timezone
 ENV TZ "Asia/Tokyo"
@@ -28,5 +28,5 @@ ENV TZ "Asia/Tokyo"
 ENV RADIGO_HOME "/downloads"
 VOLUME ["/downloads"]
 
-ENTRYPOINT ["/app/radiko-auto-downloader"]
+ENTRYPOINT ["/app/radicron"]
 CMD ["-c", "/app/config.yml"]

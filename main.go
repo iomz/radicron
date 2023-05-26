@@ -162,7 +162,7 @@ func main() {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
-	log.Println("starting radiko-auto-downloader")
+	log.Println("starting radicron")
 
 	// check ${RADIGO_HOME}
 	if len(os.Getenv("RADIGO_HOME")) == 0 {
