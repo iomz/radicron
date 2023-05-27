@@ -29,7 +29,8 @@ func (rs Rules) HasRuleFor(stationID string) bool {
 
 type Rule struct {
 	Name      string `mapstructure:"name"`       // required
-	Title     string `mapstructure:"title"`      // required if keyword is unset
+	Title     string `mapstructure:"title"`      // required if pfm and keyword are unset
+	Pfm       string `mapstructure:"pfm"`        // optional
 	Keyword   string `mapstructure:"keyword"`    // optional
 	AreaID    string `mapstructure:"area-id"`    // optional
 	StationID string `mapstructure:"station-id"` // optional
@@ -42,6 +43,9 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 	}
 	if r.HasTitle() && strings.Contains(p.Title, r.Title) {
 		log.Printf("rule[%s] matched with title: '%s'", r.Name, p.Title)
+		return true
+	} else if r.HasPfm() && strings.Contains(p.Pfm, r.Pfm) {
+		log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
 		return true
 	} else if r.HasKeyword() {
 		// TODO: search for tags
@@ -69,6 +73,10 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 
 func (r *Rule) HasKeyword() bool {
 	return len(r.Keyword) != 0
+}
+
+func (r *Rule) HasPfm() bool {
+	return len(r.Pfm) != 0
 }
 
 func (r *Rule) HasStationID() bool {
