@@ -8,26 +8,25 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
 	"github.com/yyoshiki41/go-radiko"
-	"github.com/yyoshiki41/radigo"
 )
 
 var (
-	location *time.Location // store the current location
-	stations []string       // store the available stations
+	currentTime time.Time      // store the current location
+	location    *time.Location // store the current location
+	stations    []string       // store the available stations
 )
 
 func run(ctx context.Context, client *radiko.Client, interval string) {
-	// save the current time
-	currentTime := time.Now().In(location)
+	// log the current time
+	currentTime = time.Now().In(location)
 
-	// re-fetch the rules
+	// refresh the rules
 	rules := Rules{}
 	for name := range viper.GetStringMap("rules") {
 		rule := &Rule{}
@@ -38,6 +37,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 		rule.SetName(name)
 		rules = append(rules, rule)
 	}
+
 	// create the wait group for downloading
 	var wg sync.WaitGroup
 	for _, stationID := range stations {
@@ -46,7 +46,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 			continue
 		}
 
-		// Fetch the weekly program
+		// fetch the weekly program
 		log.Printf("fetching the %s program", stationID)
 		weeklyPrograms, err := client.GetWeeklyPrograms(ctx, stationID)
 		if err != nil {
@@ -54,81 +54,16 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 			continue
 		}
 
-		// cycle through the programs to record
+		// iterate through the rules to download
 		for _, r := range rules {
-			if r.HasStationID() && r.StationID != stationID {
-				continue // skip unspecified stations
-			}
-			log.Printf("searching for [%s] title='%s' keyword='%s'", r.Name, r.Title, r.Keyword)
-
 			for _, p := range weeklyPrograms[0].Progs.Progs {
-				var start, title string
-				// TODO: rewrite the branching nicer
-				if r.HasTitle() && strings.Contains(p.Title, r.Title) {
-					title = p.Title
-					start = p.Ft
-				} else if r.HasKeyword() {
-					// TODO: search for tags
-					//for _, tag := range p.Tags
-					// TODO: rewrite the matching nicer
-					if strings.Contains(p.Title, r.Keyword) ||
-						strings.Contains(p.SubTitle, r.Keyword) ||
-						strings.Contains(p.Desc, r.Keyword) ||
-						strings.Contains(p.Pfm, r.Keyword) ||
-						strings.Contains(p.Info, r.Keyword) {
-						title = p.Title
-						start = p.Ft
-					} else { // not found
-						continue
+				if r.Match(stationID, p) {
+					err = Download(ctx, &wg, client, p, stationID)
+					if err != nil {
+						log.Printf("downlod faild: %s", err)
 					}
-				} else { // both title and keyword are empty
-					continue
 				}
-
-				startTime, err := time.ParseInLocation(DatetimeLayout, start, location)
-				if err != nil {
-					log.Fatalf("invalid start time format '%s': %s", start, err)
-				}
-
-				if startTime.After(currentTime) { // if it is in the future, skip
-					continue
-				}
-
-				output, err := radigo.NewOutputConfig(
-					fmt.Sprintf(
-						"%s_%s_%s",
-						startTime.In(location).Format(OutputDatetimeLayout),
-						stationID,
-						title,
-					),
-					radigo.AudioFormatM4A,
-				)
-				if err != nil {
-					log.Fatalf("failed to configure output: %s", err)
-				}
-
-				if err := output.SetupDir(); err != nil {
-					log.Fatalf("failed to setup the output dir: %s", err)
-				}
-
-				if output.IsExist() {
-					log.Printf("skip [%s]%s at %s", stationID, title, start)
-					log.Printf("the output file already exists: %s", output.AbsPath())
-					continue
-				}
-				log.Printf("start downloading [%s]%s at %s", stationID, title, start)
-
-				// record the timeshift recording
-				uri, err := client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)
-				if err != nil {
-					log.Printf("failed to get playlist.m3u8: %s", err)
-					continue
-				}
-
-				// detach the download job
-				wg.Add(1)
-				go DownloadProgram(ctx, &wg, p, uri, output)
-			} // programs
+			} // weeklyPrograms for stationID
 		} // rules
 	} // stations
 
@@ -191,7 +126,7 @@ func main() {
 	// set the default interval as weekly
 	viper.SetDefault("interval", "168h")
 
-	// get the global config paramters
+	// get the global config parameters
 	var (
 		areaID   = viper.GetString("area-id")
 		interval = viper.GetString("interval")

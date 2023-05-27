@@ -1,5 +1,12 @@
 package main
 
+import (
+	"log"
+	"strings"
+
+	"github.com/yyoshiki41/go-radiko"
+)
+
 type Rules []*Rule
 
 func (rs Rules) HasRuleWithoutStationID() bool {
@@ -26,6 +33,38 @@ type Rule struct {
 	Keyword   string `mapstructure:"keyword"`    // optional
 	AreaID    string `mapstructure:"area-id"`    // optional
 	StationID string `mapstructure:"station-id"` // optional
+}
+
+// Match returns true if the rule matches the program
+func (r *Rule) Match(stationID string, p radiko.Prog) bool {
+	if r.HasStationID() && r.StationID != stationID {
+		return false // skip mismatching rules for stationID
+	}
+	if r.HasTitle() && strings.Contains(p.Title, r.Title) {
+		log.Printf("rule[%s] matched with title: '%s'", r.Name, p.Title)
+		return true
+	} else if r.HasKeyword() {
+		// TODO: search for tags
+		//for _, tag := range p.Tags
+		if strings.Contains(p.Title, r.Keyword) {
+			log.Printf("rule[%s] matched with title: '%s'", r.Name, p.Title)
+			return true
+		} else if strings.Contains(p.SubTitle, r.Keyword) {
+			log.Printf("rule[%s] matched with sub-title: '%s'", r.Name, p.SubTitle)
+			return true
+		} else if strings.Contains(p.Desc, r.Keyword) {
+			log.Printf("rule[%s] matched with desc: '%s'", r.Name, p.Desc)
+			return true
+		} else if strings.Contains(p.Pfm, r.Keyword) {
+			log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
+			return true
+		} else if strings.Contains(p.Info, r.Keyword) {
+			log.Printf("rule[%s] matched with info: '%s'", r.Name, p.Info)
+			return true
+		}
+	}
+	// both title and keyword are empty or not found
+	return false
 }
 
 func (r *Rule) HasKeyword() bool {

@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/bogem/id3v2"
 	"github.com/yyoshiki41/go-radiko"
@@ -82,6 +84,7 @@ func DownloadProgram(
 	output *radigo.OutputConfig, // the file configuration
 ) {
 	defer wg.Done()
+
 	chunklist, err := radiko.GetChunklistFromM3U8(uri)
 	if err != nil {
 		log.Printf("failed to get chunklist: %s", err)
@@ -106,19 +109,19 @@ func DownloadProgram(
 		return
 	}
 
-	err = radigo.ConvertAACtoM4A(ctx, concatedFile, output.AbsPath())
+	err = radigo.ConvertAACtoMP3(ctx, concatedFile, output.AbsPath())
 	if err != nil {
 		log.Printf(
-			"Failed to output a result file: %s", err)
+			"failed to output a result file: %s", err)
 		return
 	}
 	if err != nil {
-		log.Printf("Failed to open the output file: %s", err)
+		log.Printf("failed to open the output file: %s", err)
 		return
 	}
 	tag, err := id3v2.Open(output.AbsPath(), id3v2.Options{Parse: true})
 	if err != nil {
-		log.Fatal("Error while opening the output file: ", err)
+		log.Printf("error while opening the output file: %s", err)
 	}
 	defer tag.Close()
 
@@ -126,7 +129,7 @@ func DownloadProgram(
 	tag.SetTitle(output.FileBaseName)
 	tag.SetArtist(prog.Pfm)
 	tag.SetAlbum(prog.Title)
-	tag.SetYear(prog.Ft)
+	tag.SetYear(prog.Ft[:4])
 	tag.AddCommentFrame(id3v2.CommentFrame{
 		Encoding:    id3v2.EncodingUTF8,
 		Language:    "jpn",
@@ -135,9 +138,65 @@ func DownloadProgram(
 
 	// write tag to the aac
 	if err = tag.Save(); err != nil {
-		log.Fatal("Error while saving a tag: ", err)
+		log.Printf("error while saving a tag: %s", err)
 	}
 
 	// finish downloading the file
 	log.Printf("+file saved: %s", output.AbsPath())
+}
+
+func Download(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	client *radiko.Client,
+	prog radiko.Prog,
+	stationID string,
+) error {
+	title := prog.Title
+	start := prog.Ft
+
+	startTime, err := time.ParseInLocation(DatetimeLayout, start, location)
+	if err != nil {
+		return fmt.Errorf("invalid start time format '%s': %s", start, err)
+	}
+
+	if startTime.After(currentTime) { // if it is in the future, skip
+		log.Println("the program is in the future")
+		return nil
+	}
+
+	output, err := radigo.NewOutputConfig(
+		fmt.Sprintf(
+			"%s_%s_%s",
+			startTime.In(location).Format(OutputDatetimeLayout),
+			stationID,
+			title,
+		),
+		radigo.AudioFormatMP3,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to configure output: %s", err)
+	}
+
+	if err := output.SetupDir(); err != nil {
+		return fmt.Errorf("failed to setup the output dir: %s", err)
+	}
+
+	if output.IsExist() {
+		log.Printf("skip [%s]%s at %s", stationID, title, start)
+		log.Printf("the output file already exists: %s", output.AbsPath())
+		return nil
+	}
+	log.Printf("start downloading [%s]%s at %s", stationID, title, start)
+
+	// record the timeshift recording
+	uri, err := client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)
+	if err != nil {
+		return fmt.Errorf("failed to get playlist.m3u8: %s", err)
+	}
+
+	// detach the download job
+	wg.Add(1)
+	go DownloadProgram(ctx, wg, prog, uri, output)
+	return nil
 }
