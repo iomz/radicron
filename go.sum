@@ -155,8 +155,6 @@ github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.11 h1:3tnifQM4i+fbajXKBHXWEH+KvNHqojZ778UH75j3bGA=
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
-github.com/iomz/radigo v0.0.0-20230526215044-71f77b42b4a9 h1:cmZf34hmpwNZgXgoY5nMY8AQ51estNSw47boCMji1Jo=
-github.com/iomz/radigo v0.0.0-20230526215044-71f77b42b4a9/go.mod h1:sTwtuCd/PylJSM21MBb0yDouzyYomPlrJycM5VKlFPQ=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
@@ -244,6 +242,8 @@ github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yyoshiki41/go-radiko v0.9.0 h1:II7sdqRaYVzicljQ9Lo0fJuJJmw8VAdf85Hjkbb2ANY=
 github.com/yyoshiki41/go-radiko v0.9.0/go.mod h1:K7P1zWQLSdx3Gz0B0zrKC1ncjk/dEvXpv3aTHF+AbPA=
+github.com/yyoshiki41/radigo v0.12.0 h1:7x7LseFSYpRe35rsYPW+e/lAxBSMiI6hBcH9W0aWTxs=
+github.com/yyoshiki41/radigo v0.12.0/go.mod h1:sTwtuCd/PylJSM21MBb0yDouzyYomPlrJycM5VKlFPQ=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=

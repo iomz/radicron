@@ -109,10 +109,17 @@ func DownloadProgram(
 		return
 	}
 
-	err = radigo.ConvertAACtoMP3(ctx, concatedFile, output.AbsPath())
+	switch output.AudioFormat() {
+	case radigo.AudioFormatAAC:
+		err = os.Rename(concatedFile, output.AbsPath())
+	case radigo.AudioFormatMP3:
+		err = radigo.ConvertAACtoMP3(ctx, concatedFile, output.AbsPath())
+	default:
+		log.Fatal("invalid file format")
+	}
+
 	if err != nil {
-		log.Printf(
-			"failed to output a result file: %s", err)
+		log.Printf("failed to output a result file: %s", err)
 		return
 	}
 	if err != nil {
@@ -161,7 +168,7 @@ func Download(
 	}
 
 	if startTime.After(currentTime) { // if it is in the future, skip
-		log.Println("the program is in the future")
+		log.Printf("the program is in the future [%s]%s (%s)", stationID, title, start)
 		return nil
 	}
 
@@ -172,7 +179,7 @@ func Download(
 			stationID,
 			title,
 		),
-		radigo.AudioFormatMP3,
+		fileFormat,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to configure output: %s", err)
@@ -187,7 +194,7 @@ func Download(
 		log.Printf("the output file already exists: %s", output.AbsPath())
 		return nil
 	}
-	log.Printf("start downloading [%s]%s at %s", stationID, title, start)
+	log.Printf("start downloading [%s]%s (%s)", stationID, title, start)
 
 	// record the timeshift recording
 	uri, err := client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)

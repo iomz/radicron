@@ -14,10 +14,14 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/viper"
 	"github.com/yyoshiki41/go-radiko"
+	"github.com/yyoshiki41/radigo"
 )
 
 var (
+	areaID      string         // store the area-id
 	currentTime time.Time      // store the current location
+	fileFormat  string         // store the fileFormat to save
+	interval    string         // store the checking interval
 	location    *time.Location // store the current location
 	stations    []string       // store the available stations
 )
@@ -26,7 +30,10 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 	// log the current time
 	currentTime = time.Now().In(location)
 
-	// refresh the rules
+	// refresh the rules from the file
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("fatal error config file: %s \n", err)
+	}
 	rules := Rules{}
 	for name := range viper.GetStringMap("rules") {
 		rule := &Rule{}
@@ -68,6 +75,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 	} // stations
 
 	// wait for all the downloading jobs
+	log.Println("waiting for all the downloads to complete")
 	wg.Wait()
 
 	delta, err := time.ParseDuration(interval)
@@ -125,13 +133,22 @@ func main() {
 	viper.SetDefault("area-id", "JP13")
 	// set the default interval as weekly
 	viper.SetDefault("interval", "168h")
+	// set the default file-format as aac
+	viper.SetDefault("file-format", radigo.AudioFormatAAC)
 
 	// get the global config parameters
-	var (
-		areaID   = viper.GetString("area-id")
-		interval = viper.GetString("interval")
-	)
+	areaID = viper.GetString("area-id")
+	fileFormat = viper.GetString("file-format")
+	interval = viper.GetString("interval")
+
+	// TODO: validate the config parameters
+	if fileFormat != radigo.AudioFormatAAC &&
+		fileFormat != radigo.AudioFormatMP3 {
+		log.Fatalf("Unsupported audio format: %s", fileFormat)
+	}
+
 	log.Printf("[config] area-id: %s", areaID)
+	log.Printf("[config] file-format: %s", fileFormat)
 	log.Printf("[config] interval: %s", interval)
 
 	// initialize radiko client with context
