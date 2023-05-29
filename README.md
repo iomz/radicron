@@ -47,7 +47,13 @@ In addition, set `${RADIGO_HOME}` to set the download directory.
 By default, it mounts `./config.yml` and `./downloads` to the container.
 
 ```console
-docker-compose up
+docker compose up
+```
+
+To set the ownership of the downloaded files, run it with `$UID` and `$GID` environment variables:
+
+```console
+UID=$(id -u) GID=$(id -g) docker compose up -d
 ```
 
 ## Build the image yourself

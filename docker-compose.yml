@@ -5,6 +5,7 @@ services:
     image: iomz/radicron:latest
     container_name: radicron
     restart: unless-stopped
+    user: "$UID:$GID"
     volumes:
       - ./config.yml:/app/config.yml
       - ./downloads:/downloads
