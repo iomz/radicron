@@ -130,9 +130,9 @@ func main() {
 	}
 
 	// set the default area_id
-	viper.SetDefault("area-id", "JP13")
+	viper.SetDefault("area-id", DefaultArea)
 	// set the default interval as weekly
-	viper.SetDefault("interval", "168h")
+	viper.SetDefault("interval", DefaultInterval)
 	// set the default file-format as aac
 	viper.SetDefault("file-format", radigo.AudioFormatAAC)
 
@@ -141,10 +141,17 @@ func main() {
 	fileFormat = viper.GetString("file-format")
 	interval = viper.GetString("interval")
 
-	// TODO: validate the config parameters
+	// TODO: verify the area-id
+	// check if the interval is invalid or is too short
+	intervalDuration, err := time.ParseDuration(interval)
+	if err != nil || intervalDuration < time.Hour {
+		log.Fatalf("invalid interval: %s, setting to %v", interval, DefaultInterval)
+		interval = DefaultInterval
+	}
+	// check the output file format
 	if fileFormat != radigo.AudioFormatAAC &&
 		fileFormat != radigo.AudioFormatMP3 {
-		log.Fatalf("Unsupported audio format: %s", fileFormat)
+		log.Fatalf("unsupported audio format: %s", fileFormat)
 	}
 
 	log.Printf("[config] area-id: %s", areaID)
