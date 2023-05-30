@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"time"
 
 	"github.com/yyoshiki41/go-radiko"
 )
@@ -29,6 +30,7 @@ func (rs Rules) HasRuleFor(stationID string) bool {
 
 type Rule struct {
 	Name      string `mapstructure:"name"`       // required
+	Window    string `mapstructure:"window"`     // optional
 	Title     string `mapstructure:"title"`      // required if pfm and keyword are unset
 	Pfm       string `mapstructure:"pfm"`        // optional
 	Keyword   string `mapstructure:"keyword"`    // optional
@@ -38,6 +40,21 @@ type Rule struct {
 
 // Match returns true if the rule matches the program
 func (r *Rule) Match(stationID string, p radiko.Prog) bool {
+	if r.HasWindow() {
+		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, location)
+		if err != nil {
+			log.Printf("invalid start time format '%s': %s", p.Ft, err)
+			return false
+		}
+		fetchWindow, err := time.ParseDuration(r.Window)
+		if err != nil {
+			log.Printf("parsing [%s].past failed: %v (using 24h)", r.Name, err)
+			fetchWindow = time.Hour * 24
+		}
+		if startTime.Add(fetchWindow).Before(currentTime) {
+			return false // skip before the fetch window
+		}
+	}
 	if r.HasStationID() && r.StationID != stationID {
 		return false // skip mismatching rules for stationID
 	}
@@ -73,6 +90,10 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 
 func (r *Rule) HasKeyword() bool {
 	return len(r.Keyword) != 0
+}
+
+func (r *Rule) HasWindow() bool {
+	return len(r.Window) != 0
 }
 
 func (r *Rule) HasPfm() bool {
