@@ -3,6 +3,7 @@ module github.com/iomz/radicron
 go 1.20
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/bogem/id3v2 v1.2.0
 	github.com/go-co-op/gocron v1.27.1
 	github.com/spf13/viper v1.15.0

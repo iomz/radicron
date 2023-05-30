@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/bogem/id3v2"
 	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
@@ -194,16 +195,40 @@ func Download(
 		log.Printf("the output file already exists: %s", output.AbsPath())
 		return nil
 	}
-	log.Printf("start downloading [%s]%s (%s)", stationID, title, start)
-
-	// record the timeshift recording
-	uri, err := client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)
-	if err != nil {
-		return fmt.Errorf("failed to get playlist.m3u8: %s", err)
-	}
 
 	// detach the download job
 	wg.Add(1)
-	go DownloadProgram(ctx, wg, prog, uri, output)
+	go func() {
+		// try fetching the recording m3u8 uri
+		var uri string
+		err = retry.Do(
+			func() error {
+				uri, err = client.TimeshiftPlaylistM3U8(ctx, stationID, startTime)
+				return err
+			},
+			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				retry.DefaultDelay = 60 * time.Second
+				delay := retry.BackOffDelay(n, err, config)
+				log.Printf(
+					"failed to get playlist.m3u8 for [%s]%s (%s): %s (retrying in %s)",
+					stationID,
+					title,
+					start,
+					err,
+					delay,
+				)
+				// apply a default exponential back off strategy
+				return delay
+			}),
+			retry.Attempts(MaxRetryAttempts),          // maximum retry = 8 (~6hrs)
+			retry.Delay(RetryDelaySecond*time.Second), // initial delay for BackOffDelay
+		)
+		if len(uri) == 0 {
+			wg.Done()
+			return
+		}
+		log.Printf("start downloading [%s]%s (%s)", stationID, title, start)
+		go DownloadProgram(ctx, wg, prog, uri, output)
+	}()
 	return nil
 }
