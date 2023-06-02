@@ -88,16 +88,12 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 	return false
 }
 
-func (r *Rule) HasKeyword() bool {
-	return len(r.Keyword) != 0
-}
-
-func (r *Rule) HasWindow() bool {
-	return len(r.Window) != 0
-}
-
 func (r *Rule) HasPfm() bool {
 	return len(r.Pfm) != 0
+}
+
+func (r *Rule) HasKeyword() bool {
+	return len(r.Keyword) != 0
 }
 
 func (r *Rule) HasStationID() bool {
@@ -110,6 +106,10 @@ func (r *Rule) HasStationID() bool {
 
 func (r *Rule) HasTitle() bool {
 	return len(r.Title) != 0
+}
+
+func (r *Rule) HasWindow() bool {
+	return len(r.Window) != 0
 }
 
 func (r *Rule) SetName(name string) {
