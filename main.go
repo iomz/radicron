@@ -29,6 +29,78 @@ var (
 	MaxRetryAttempts  uint           // for downloading
 )
 
+func configure(filename string) {
+	cwd, _ := os.Getwd()
+
+	// check ${RADIGO_HOME}
+	if len(os.Getenv("RADIGO_HOME")) == 0 {
+		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "./downloads"))
+	}
+
+	// load params from a config file
+	if filename != "config.yml" && filename != "config.toml" {
+		configPath, err := filepath.Abs(filename)
+		if err != nil {
+			panic(err)
+		}
+		viper.SetConfigFile(configPath)
+	} else {
+		viper.SetConfigName("config")
+		viper.AddConfigPath(cwd)
+	}
+
+	// read the config file
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("error reading config: %s \n", err)
+	}
+
+	// set the default area_id
+	viper.SetDefault("area-id", DefaultArea)
+	// set the default file-format as aac
+	viper.SetDefault("file-format", radigo.AudioFormatAAC)
+	// set the default initial retry delay as 60 seconds
+	viper.SetDefault("initial-delay", DefaultInitialDelaySeconds)
+	// set the default interval as weekly
+	viper.SetDefault("interval", DefaultInterval)
+	// set the default max concurrency as 64
+	viper.SetDefault("max-concurrency", DefaultMaxConcurrency)
+	// set the default max retries as 8
+	viper.SetDefault("max-retry", DefaultMaxRetryAttempts)
+
+	// get the global config parameters
+	AreaID = viper.GetString("area-id")
+	FileFormat = viper.GetString("file-format")
+	InitialDelay = time.Second * time.Duration(viper.GetInt("initial-delay"))
+	Interval = viper.GetString("interval")
+	MaxConcurrency = viper.GetInt("max-concurrency")
+	MaxRetryAttempts = viper.GetUint("max-retry")
+
+	// check if the interval is invalid or is too short
+	intervalDuration, err := time.ParseDuration(Interval)
+	if err != nil || intervalDuration < time.Hour {
+		log.Fatalf("invalid interval: %s, setting to %v", Interval, DefaultInterval)
+		Interval = DefaultInterval
+	}
+	// check the output file format
+	if FileFormat != radigo.AudioFormatAAC &&
+		FileFormat != radigo.AudioFormatMP3 {
+		log.Fatalf("unsupported audio format: %s", FileFormat)
+	}
+
+	log.Printf("[config] area-id: %s", AreaID)
+	log.Printf("[config] file-format: %s", FileFormat)
+	log.Printf("[config] initial-delay: %v", InitialDelay)
+	log.Printf("[config] interval: %s", Interval)
+	log.Printf("[config] max-concurrency: %v", MaxConcurrency)
+	log.Printf("[config] max-retry: %v", MaxRetryAttempts)
+
+	// radiko is in Japan
+	Location, err = time.LoadLocation(TZTokyo)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func run(ctx context.Context, client *radiko.Client, interval string) {
 	// log the current time
 	CurrentTime = time.Now().In(Location)
@@ -90,7 +162,6 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 
 func main() {
 	// Set the config location
-	cwd, _ := os.Getwd()
 	conf := flag.String("c", "config.yml", "the config.yml to use.")
 	enableDebug := flag.Bool("d", false, "enable debug mode.")
 	version := flag.Bool("v", false, "print version.")
@@ -110,80 +181,14 @@ func main() {
 
 	log.Println("starting radicron")
 
-	// check ${RADIGO_HOME}
-	if len(os.Getenv("RADIGO_HOME")) == 0 {
-		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "./downloads"))
-	}
-
-	// load config
-	if *conf != "config.yml" {
-		configPath, err := filepath.Abs(*conf)
-		if err != nil {
-			panic(err)
-		}
-		viper.SetConfigFile(configPath)
-	} else {
-		viper.SetConfigName("config")
-		viper.AddConfigPath(cwd)
-	}
-
-	// read the config file
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("fatal error config file: %s \n", err)
-	}
-
-	// set the default area_id
-	viper.SetDefault("area-id", DefaultArea)
-	// set the default interval as weekly
-	viper.SetDefault("interval", DefaultInterval)
-	// set the default file-format as aac
-	viper.SetDefault("file-format", radigo.AudioFormatAAC)
-	// set the default initial retry delay as 60 seconds
-	viper.SetDefault("initial-delay", DefaultInitialDelaySeconds)
-	// set the default max concurrency as 64
-	viper.SetDefault("max-concurrency", DefaultMaxConcurrency)
-	// set the default max retries as 8
-	viper.SetDefault("max-retry", DefaultMaxRetryAttempts)
-
-	// get the global config parameters
-	AreaID = viper.GetString("area-id")
-	FileFormat = viper.GetString("file-format")
-	InitialDelay = time.Second * time.Duration(viper.GetInt("initial-delay"))
-	Interval = viper.GetString("interval")
-	MaxConcurrency = viper.GetInt("max-concurrency")
-	MaxRetryAttempts = viper.GetUint("max-retry")
-
-	// TODO: verify the area-id
-	// check if the interval is invalid or is too short
-	intervalDuration, err := time.ParseDuration(Interval)
-	if err != nil || intervalDuration < time.Hour {
-		log.Fatalf("invalid interval: %s, setting to %v", Interval, DefaultInterval)
-		Interval = DefaultInterval
-	}
-	// check the output file format
-	if FileFormat != radigo.AudioFormatAAC &&
-		FileFormat != radigo.AudioFormatMP3 {
-		log.Fatalf("unsupported audio format: %s", FileFormat)
-	}
-
-	log.Printf("[config] area-id: %s", AreaID)
-	log.Printf("[config] file-format: %s", FileFormat)
-	log.Printf("[config] initial-delay: %v", InitialDelay)
-	log.Printf("[config] interval: %s", Interval)
-	log.Printf("[config] max-concurrency: %v", MaxConcurrency)
-	log.Printf("[config] max-retry: %v", MaxRetryAttempts)
+	// load config params
+	configure(*conf)
 
 	// initialize radiko client with context
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 
 	client, err := NewRadikoClient(ctx, AreaID)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// let us use this in Japan
-	Location, err = time.LoadLocation(TZTokyo)
 	if err != nil {
 		log.Fatal(err)
 	}

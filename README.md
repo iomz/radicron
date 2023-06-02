@@ -35,9 +35,10 @@ rules:
   airship: # name your rule as you like
     station-id: FMT # (optional) the staion_id
     title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～" # this can be a partial match
+  citypop:
+    keyword: "シティポップ" # search by keyword
   hiccorohee:
-    keyword: "ヒコロヒー" # search all the metadata
-    area-id: JP13 # optional
+    pfm: "ヒコロヒー" # search by pfm
 ```
 
 In addition, set `${RADIGO_HOME}` to set the download directory.
