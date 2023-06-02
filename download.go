@@ -21,7 +21,7 @@ import (
 // reimplement some internal functions from
 // https://github.com/yyoshiki41/radigo/blob/main/internal/download.go
 
-var sem = make(chan struct{}, MaxConcurrents)
+var sem = make(chan struct{}, MaxConcurrency)
 
 func bulkDownload(list []string, output string) error {
 	var errFlag bool
@@ -33,7 +33,7 @@ func bulkDownload(list []string, output string) error {
 			defer wg.Done()
 
 			var err error
-			for i := 0; i < MaxAttempts; i++ {
+			for i := 0; i < int(MaxRetryAttempts); i++ {
 				sem <- struct{}{}
 				err = downloadLink(link, output)
 				<-sem
@@ -163,12 +163,12 @@ func Download(
 	title := prog.Title
 	start := prog.Ft
 
-	startTime, err := time.ParseInLocation(DatetimeLayout, start, location)
+	startTime, err := time.ParseInLocation(DatetimeLayout, start, Location)
 	if err != nil {
 		return fmt.Errorf("invalid start time format '%s': %s", start, err)
 	}
 
-	if startTime.After(currentTime) { // if it is in the future, skip
+	if startTime.After(CurrentTime) { // if it is in the future, skip
 		log.Printf("the program is in the future [%s]%s (%s)", stationID, title, start)
 		return nil
 	}
@@ -176,11 +176,11 @@ func Download(
 	output, err := radigo.NewOutputConfig(
 		fmt.Sprintf(
 			"%s_%s_%s",
-			startTime.In(location).Format(OutputDatetimeLayout),
+			startTime.In(Location).Format(OutputDatetimeLayout),
 			stationID,
 			title,
 		),
-		fileFormat,
+		FileFormat,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to configure output: %s", err)
@@ -220,8 +220,8 @@ func Download(
 				// apply a default exponential back off strategy
 				return delay
 			}),
-			retry.Attempts(MaxRetryAttempts),          // maximum retry = 8 (~6hrs)
-			retry.Delay(RetryDelaySecond*time.Second), // initial delay for BackOffDelay
+			retry.Attempts(MaxRetryAttempts),
+			retry.Delay(InitialDelay),
 		)
 		if len(uri) == 0 {
 			wg.Done()

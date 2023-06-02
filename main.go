@@ -18,17 +18,20 @@ import (
 )
 
 var (
-	areaID      string         // store the area-id
-	currentTime time.Time      // store the current location
-	fileFormat  string         // store the fileFormat to save
-	interval    string         // store the checking interval
-	location    *time.Location // store the current location
-	stations    []string       // store the available stations
+	AreaID            string         // radiko's area-id
+	AvailableStations []string       // the available stations
+	CurrentTime       time.Time      // time in the location
+	FileFormat        string         // the file format to save
+	InitialDelay      time.Duration  // the initial delay to back off from
+	Interval          string         // the checking interval
+	Location          *time.Location // the current location
+	MaxConcurrency    int            // for downloading
+	MaxRetryAttempts  uint           // for downloading
 )
 
 func run(ctx context.Context, client *radiko.Client, interval string) {
 	// log the current time
-	currentTime = time.Now().In(location)
+	CurrentTime = time.Now().In(Location)
 
 	// refresh the rules from the file
 	if err := viper.ReadInConfig(); err != nil {
@@ -47,7 +50,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 
 	// create the wait group for downloading
 	var wg sync.WaitGroup
-	for _, stationID := range stations {
+	for _, stationID := range AvailableStations {
 		if !rules.HasRuleWithoutStationID() && // search all stations
 			!rules.HasRuleFor(stationID) { // search this station
 			continue
@@ -82,7 +85,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("fetching completed – sleeping until %v", currentTime.Add(delta))
+	log.Printf("fetching completed – sleeping until %v", CurrentTime.Add(delta))
 }
 
 func main() {
@@ -135,40 +138,52 @@ func main() {
 	viper.SetDefault("interval", DefaultInterval)
 	// set the default file-format as aac
 	viper.SetDefault("file-format", radigo.AudioFormatAAC)
+	// set the default initial retry delay as 60 seconds
+	viper.SetDefault("initial-delay", DefaultInitialDelaySeconds)
+	// set the default max concurrency as 64
+	viper.SetDefault("max-concurrency", DefaultMaxConcurrency)
+	// set the default max retries as 8
+	viper.SetDefault("max-retry", DefaultMaxRetryAttempts)
 
 	// get the global config parameters
-	areaID = viper.GetString("area-id")
-	fileFormat = viper.GetString("file-format")
-	interval = viper.GetString("interval")
+	AreaID = viper.GetString("area-id")
+	FileFormat = viper.GetString("file-format")
+	InitialDelay = time.Second * time.Duration(viper.GetInt("initial-delay"))
+	Interval = viper.GetString("interval")
+	MaxConcurrency = viper.GetInt("max-concurrency")
+	MaxRetryAttempts = viper.GetUint("max-retry")
 
 	// TODO: verify the area-id
 	// check if the interval is invalid or is too short
-	intervalDuration, err := time.ParseDuration(interval)
+	intervalDuration, err := time.ParseDuration(Interval)
 	if err != nil || intervalDuration < time.Hour {
-		log.Fatalf("invalid interval: %s, setting to %v", interval, DefaultInterval)
-		interval = DefaultInterval
+		log.Fatalf("invalid interval: %s, setting to %v", Interval, DefaultInterval)
+		Interval = DefaultInterval
 	}
 	// check the output file format
-	if fileFormat != radigo.AudioFormatAAC &&
-		fileFormat != radigo.AudioFormatMP3 {
-		log.Fatalf("unsupported audio format: %s", fileFormat)
+	if FileFormat != radigo.AudioFormatAAC &&
+		FileFormat != radigo.AudioFormatMP3 {
+		log.Fatalf("unsupported audio format: %s", FileFormat)
 	}
 
-	log.Printf("[config] area-id: %s", areaID)
-	log.Printf("[config] file-format: %s", fileFormat)
-	log.Printf("[config] interval: %s", interval)
+	log.Printf("[config] area-id: %s", AreaID)
+	log.Printf("[config] file-format: %s", FileFormat)
+	log.Printf("[config] initial-delay: %v", InitialDelay)
+	log.Printf("[config] interval: %s", Interval)
+	log.Printf("[config] max-concurrency: %v", MaxConcurrency)
+	log.Printf("[config] max-retry: %v", MaxRetryAttempts)
 
 	// initialize radiko client with context
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 
-	client, err := NewRadikoClient(ctx, areaID)
+	client, err := NewRadikoClient(ctx, AreaID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// let us use this in Japan
-	location, err = time.LoadLocation(TZTokyo)
+	Location, err = time.LoadLocation(TZTokyo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -180,16 +195,16 @@ func main() {
 	}
 	for _, ss := range region.Region {
 		for _, s := range ss.Stations {
-			if s.AreaID == areaID {
-				stations = append(stations, s.ID)
+			if s.AreaID == AreaID {
+				AvailableStations = append(AvailableStations, s.ID)
 			}
 		}
 	}
-	log.Printf("available stations in %s: %q", areaID, stations)
+	log.Printf("available stations in %s: %q", AreaID, AvailableStations)
 
 	// put the runner to a scheduler
-	s := gocron.NewScheduler(location)
-	job, err := s.Every(interval).Do(run, ctx, client, interval)
+	s := gocron.NewScheduler(Location)
+	job, err := s.Every(Interval).Do(run, ctx, client, Interval)
 	if err != nil {
 		log.Fatalf("job: %v, error: %v", job, err)
 	}
