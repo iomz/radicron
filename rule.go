@@ -41,7 +41,7 @@ type Rule struct {
 // Match returns true if the rule matches the program
 func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 	if r.HasWindow() {
-		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, location)
+		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, Location)
 		if err != nil {
 			log.Printf("invalid start time format '%s': %s", p.Ft, err)
 			return false
@@ -51,7 +51,7 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 			log.Printf("parsing [%s].past failed: %v (using 24h)", r.Name, err)
 			fetchWindow = time.Hour * 24
 		}
-		if startTime.Add(fetchWindow).Before(currentTime) {
+		if startTime.Add(fetchWindow).Before(CurrentTime) {
 			return false // skip before the fetch window
 		}
 	}
