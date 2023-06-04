@@ -18,14 +18,15 @@ import (
 )
 
 var (
-	AreaID            string         // radiko's area-id
-	AvailableStations []string       // the available stations
-	CurrentTime       time.Time      // time in the location
-	ExtraStations     []string       // extra stations to search
-	FileFormat        string         // the file format to save
-	InitialDelay      time.Duration  // the initial delay to back off from
-	Interval          string         // the checking interval
-	Location          *time.Location // the current location
+	AreaID            string            // radiko's area-id
+	AreaTokens        map[string]string // token for area-id
+	AvailableStations []string          // the available stations
+	CurrentTime       time.Time         // time in the location
+	ExtraStations     []string          // extra stations to search
+	FileFormat        string            // the file format to save
+	InitialDelay      time.Duration     // the initial delay to back off from
+	Interval          string            // the checking interval
+	Location          *time.Location    // the current location
 )
 
 func configure(filename string) {
@@ -63,18 +64,13 @@ func configure(filename string) {
 	viper.SetDefault("extra-stations", []string{})
 	// set the default file-format as aac
 	viper.SetDefault("file-format", radigo.AudioFormatAAC)
-	// set the default initial retry delay as 60 seconds
-	viper.SetDefault("initial-delay", DefaultInitialDelaySeconds)
 	// set the default interval as weekly
 	viper.SetDefault("interval", DefaultInterval)
-	// set the default max retries as 8
-	viper.SetDefault("max-retry", MaxRetryAttempts)
 
 	// get the global config parameters
 	AreaID = viper.GetString("area-id")
 	ExtraStations = viper.GetStringSlice("extra-stations")
 	FileFormat = viper.GetString("file-format")
-	InitialDelay = time.Second * time.Duration(viper.GetInt("initial-delay"))
 	Interval = viper.GetString("interval")
 
 	// check if the interval is invalid or is too short
@@ -91,7 +87,6 @@ func configure(filename string) {
 
 	log.Printf("[config] area-id: %s", AreaID)
 	log.Printf("[config] file-format: %s", FileFormat)
-	log.Printf("[config] initial-delay: %v", InitialDelay)
 	log.Printf("[config] interval: %s", Interval)
 
 	// radiko is in Japan
@@ -105,6 +100,9 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 	// log the current time
 	CurrentTime = time.Now().In(Location)
 
+	// refresh AreaTokens
+	AreaTokens = map[string]string{}
+
 	// refresh the rules from the file
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("fatal error config file: %s \n", err)
@@ -117,6 +115,18 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 			log.Fatal(err)
 		}
 		rule.SetName(name)
+		if rule.HasStationID() {
+			isNewStation := true
+			for _, as := range AvailableStations {
+				if as == rule.StationID {
+					isNewStation = false
+					break
+				}
+			}
+			if isNewStation {
+				AvailableStations = append(AvailableStations, rule.StationID)
+			}
+		}
 		rules = append(rules, rule)
 	}
 
@@ -129,7 +139,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 		}
 
 		// fetch the weekly program
-		log.Printf("fetching the %s program", stationID)
+		//log.Printf("fetching the %s program", stationID)
 		weeklyPrograms, err := client.GetWeeklyPrograms(ctx, stationID)
 		if err != nil {
 			log.Printf("failed to fetch the %s program: %v", stationID, err)
