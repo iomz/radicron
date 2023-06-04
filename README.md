@@ -28,7 +28,9 @@ Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they
 You first need to create a configuration file (`config.yml`) to list programs to look for:
 
 ```yaml
-area-id: JP13 # default to the "kanto" region
+area-id: JP13 # if unset, default to "your" region
+extra-stations:
+  - ALPHA-STATION # include stations not in your region
 interval: 168h # fetch every 7 days (Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h" and must be positive)
 
 rules:
