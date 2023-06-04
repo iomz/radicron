@@ -273,10 +273,10 @@ func GetToken(ctx context.Context, client *radiko.Client, areaID string) string 
 	req, _ := http.NewRequest("GET", "https://radiko.jp/v2/api/auth1", nil)
 	req = req.WithContext(ctx)
 	headers := map[string]string{
-		"User-Agent":           "Dalvik/2.1.0 (Linux; U; Android 11.0.0; D5833/RQ1A.201205.011)",
-		RadikoAppHeader:        "aSmartPhone7a",
-		RadikoAppVersionHeader: "7.4.17",
-		RadikoDeviceHeader:     "30.D5833",
+		UserAgentHeader:        DalvikAgent,
+		RadikoAppHeader:        ASmartPhone7a,
+		RadikoAppVersionHeader: ASmartPhone7aVersion,
+		RadikoDeviceHeader:     ASmartPhone7aDevice,
 		RadikoUserHeader:       userID,
 	}
 	for k, v := range headers {
@@ -298,14 +298,14 @@ func GetToken(ctx context.Context, client *radiko.Client, areaID string) string 
 	req, _ = http.NewRequest("GET", "https://radiko.jp/v2/api/auth2", nil)
 	req = req.WithContext(ctx)
 	headers = map[string]string{
-		"User-Agent":           "Dalvik/2.1.0 (Linux; U; Android 11.0.0; D5833/RQ1A.201205.011)",
-		RadikoAppHeader:        "aSmartPhone7a",
-		RadikoAppVersionHeader: "7.4.17",
+		UserAgentHeader:        DalvikAgent,
+		RadikoAppHeader:        ASmartPhone7a,
+		RadikoAppVersionHeader: ASmartPhone7aVersion,
+		RadikoDeviceHeader:     ASmartPhone7aDevice,
 		RadikoAuthTokenHeader:  token,
-		RadikoDeviceHeader:     "30.D5833",
 		RadikoUserHeader:       userID,
 		RadikoLocationHeader:   location,
-		RadikoConnectionHeader: "wifi",
+		RadikoConnectionHeader: WiFiConnection,
 		RadikoPartialKeyHeader: partial,
 	}
 	for k, v := range headers {

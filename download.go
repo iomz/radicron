@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/avast/retry-go"
 	"github.com/bogem/id3v2"
 	"github.com/grafov/m3u8"
 	"github.com/yyoshiki41/go-radiko"
@@ -142,7 +141,7 @@ func downloadProgram(
 	tag.SetYear(prog.Ft[:4])
 	tag.AddCommentFrame(id3v2.CommentFrame{
 		Encoding:    id3v2.EncodingUTF8,
-		Language:    "jpn",
+		Language:    ID3v2LangJPN,
 		Description: prog.Info,
 	})
 
@@ -198,40 +197,20 @@ func Download(
 		return nil
 	}
 
-	// detach the download job
-	wg.Add(1)
-	go func() {
-		// try fetching the recording m3u8 uri
-		var uri string
-		err = retry.Do(
-			func() error {
-				uri, err = TimeshiftProgM3U8(ctx, client, stationID, prog)
-				return err
-			},
-			retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-				retry.DefaultDelay = 60 * time.Second
-				delay := retry.BackOffDelay(n, err, config)
-				log.Printf(
-					"failed to get playlist.m3u8 for [%s]%s (%s): %s (retrying in %s)",
-					stationID,
-					title,
-					start,
-					err,
-					delay,
-				)
-				// apply a default exponential back off strategy
-				return delay
-			}),
-			retry.Attempts(MaxRetryAttempts),
-			retry.Delay(InitialDelay),
+	// fetch the recording m3u8 uri
+	uri, err := TimeshiftProgM3U8(ctx, client, stationID, prog)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to get playlist.m3u8 for [%s]%s (%s): %s",
+			stationID,
+			title,
+			start,
+			err,
 		)
-		if len(uri) == 0 {
-			wg.Done()
-			return
-		}
-		log.Printf("start downloading [%s]%s (%s): %s", stationID, title, start, uri)
-		go downloadProgram(ctx, wg, prog, uri, output)
-	}()
+	}
+	log.Printf("start downloading [%s]%s (%s): %s", stationID, title, start, uri)
+	wg.Add(1)
+	go downloadProgram(ctx, wg, prog, uri, output)
 	return nil
 }
 
@@ -287,9 +266,12 @@ func TimeshiftProgM3U8(
 	var err error
 	areaID := getArea(stationID)
 
-	log.Printf("area-id: %s", areaID)
-	token := GetToken(ctx, client, areaID)
-	log.Printf("token: %s", token)
+	token, ok := AreaTokens[areaID]
+	if !ok {
+		token = GetToken(ctx, client, areaID)
+		AreaTokens[areaID] = token
+		log.Printf("new token for %s: %s", areaID, token)
+	}
 
 	u := *client.URL
 	u.Path = path.Join(client.URL.Path, "v2/api/ts/playlist.m3u8")
@@ -308,7 +290,7 @@ func TimeshiftProgM3U8(
 	req, _ = http.NewRequest("POST", u.String(), nil)
 	req = req.WithContext(ctx)
 	headers := map[string]string{
-		"User-Agent":          "Dalvik/2.1.0 (Linux; U; Android 11.0.0; D5833/RQ1A.201205.011)",
+		UserAgentHeader:       DalvikAgent,
 		RadikoAreaIDHeader:    areaID,
 		RadikoAuthTokenHeader: token,
 	}
