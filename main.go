@@ -21,12 +21,11 @@ var (
 	AreaID            string         // radiko's area-id
 	AvailableStations []string       // the available stations
 	CurrentTime       time.Time      // time in the location
+	ExtraStations     []string       // extra stations to search
 	FileFormat        string         // the file format to save
 	InitialDelay      time.Duration  // the initial delay to back off from
 	Interval          string         // the checking interval
 	Location          *time.Location // the current location
-	MaxConcurrency    int            // for downloading
-	MaxRetryAttempts  uint           // for downloading
 )
 
 func configure(filename string) {
@@ -55,25 +54,28 @@ func configure(filename string) {
 	}
 
 	// set the default area_id
-	viper.SetDefault("area-id", DefaultArea)
+	currentAreaID, err := radiko.AreaID()
+	if err != nil {
+		log.Fatalf("error getting area-id: %s \n", err)
+	}
+	viper.SetDefault("area-id", currentAreaID)
+	// set the default extra stations
+	viper.SetDefault("extra-stations", []string{})
 	// set the default file-format as aac
 	viper.SetDefault("file-format", radigo.AudioFormatAAC)
 	// set the default initial retry delay as 60 seconds
 	viper.SetDefault("initial-delay", DefaultInitialDelaySeconds)
 	// set the default interval as weekly
 	viper.SetDefault("interval", DefaultInterval)
-	// set the default max concurrency as 64
-	viper.SetDefault("max-concurrency", DefaultMaxConcurrency)
 	// set the default max retries as 8
-	viper.SetDefault("max-retry", DefaultMaxRetryAttempts)
+	viper.SetDefault("max-retry", MaxRetryAttempts)
 
 	// get the global config parameters
 	AreaID = viper.GetString("area-id")
+	ExtraStations = viper.GetStringSlice("extra-stations")
 	FileFormat = viper.GetString("file-format")
 	InitialDelay = time.Second * time.Duration(viper.GetInt("initial-delay"))
 	Interval = viper.GetString("interval")
-	MaxConcurrency = viper.GetInt("max-concurrency")
-	MaxRetryAttempts = viper.GetUint("max-retry")
 
 	// check if the interval is invalid or is too short
 	intervalDuration, err := time.ParseDuration(Interval)
@@ -91,8 +93,6 @@ func configure(filename string) {
 	log.Printf("[config] file-format: %s", FileFormat)
 	log.Printf("[config] initial-delay: %v", InitialDelay)
 	log.Printf("[config] interval: %s", Interval)
-	log.Printf("[config] max-concurrency: %v", MaxConcurrency)
-	log.Printf("[config] max-retry: %v", MaxRetryAttempts)
 
 	// radiko is in Japan
 	Location, err = time.LoadLocation(TZTokyo)
@@ -188,7 +188,7 @@ func main() {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 
-	client, err := NewRadikoClient(ctx, AreaID)
+	client, err := radiko.New("")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,6 +203,18 @@ func main() {
 			if s.AreaID == AreaID {
 				AvailableStations = append(AvailableStations, s.ID)
 			}
+		}
+	}
+	for _, es := range ExtraStations {
+		dup := false
+		for _, s := range AvailableStations {
+			if es == s {
+				dup = true
+				break
+			}
+		}
+		if !dup {
+			AvailableStations = append(AvailableStations, es)
 		}
 	}
 	log.Printf("available stations in %s: %q", AreaID, AvailableStations)

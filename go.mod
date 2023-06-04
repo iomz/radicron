@@ -6,6 +6,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/bogem/id3v2 v1.2.0
 	github.com/go-co-op/gocron v1.27.1
+	github.com/grafov/m3u8 v0.11.1
 	github.com/spf13/viper v1.15.0
 	github.com/yyoshiki41/go-radiko v0.9.0
 	github.com/yyoshiki41/radigo v0.12.0
@@ -21,7 +22,6 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
-	github.com/grafov/m3u8 v0.11.1 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
