@@ -18,16 +18,13 @@ import (
 )
 
 var (
-	AreaID            string            // radiko's area-id
-	AreaTokens        map[string]string // token for area-id
-	AvailableStations []string          // the available stations
-	CurrentTime       time.Time         // time in the location
-	ExtraStations     []string          // extra stations to search
-	FileFormat        string            // the file format to save
-	InitialDelay      time.Duration     // the initial delay to back off from
-	Interval          string            // the checking interval
-	Location          *time.Location    // the current location
-	RunningSchedules  Schedules         // the schedules to download
+	AreaID        string         // radiko's area-id
+	CurrentTime   time.Time      // time in the location
+	ExtraStations []string       // extra stations to search
+	FileFormat    string         // the file format to save
+	InitialDelay  time.Duration  // the initial delay to back off from
+	Interval      string         // the checking interval
+	Location      *time.Location // the current location
 )
 
 func configure(filename string) {
@@ -97,12 +94,12 @@ func configure(filename string) {
 	}
 }
 
-func run(ctx context.Context, client *radiko.Client, interval string) {
+func run(ctx context.Context, client *radiko.Client, asset *Asset, interval string) {
 	// log the current time
 	CurrentTime = time.Now().In(Location)
 
 	// refresh AreaTokens
-	AreaTokens = map[string]string{}
+	asset.AreaDevices = map[string]*Device{}
 
 	// refresh the rules from the file
 	if err := viper.ReadInConfig(); err != nil {
@@ -118,14 +115,14 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 		rule.SetName(name)
 		if rule.HasStationID() {
 			isNewStation := true
-			for _, as := range AvailableStations {
+			for _, as := range asset.AvailableStations {
 				if as == rule.StationID {
 					isNewStation = false
 					break
 				}
 			}
 			if isNewStation {
-				AvailableStations = append(AvailableStations, rule.StationID)
+				asset.AddExtraStations([]string{rule.StationID})
 			}
 		}
 		rules = append(rules, rule)
@@ -133,7 +130,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 
 	// create the wait group for downloading
 	var wg sync.WaitGroup
-	for _, stationID := range AvailableStations {
+	for _, stationID := range asset.AvailableStations {
 		if !rules.HasRuleWithoutStationID() && // search all stations
 			!rules.HasRuleForStationID(stationID) { // search this station
 			continue
@@ -151,7 +148,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 		for _, r := range rules {
 			for _, p := range weeklyPrograms[0].Progs.Progs {
 				if r.Match(stationID, p) {
-					err = Download(ctx, &wg, client, p, stationID)
+					err = Download(ctx, &wg, client, asset, p, stationID)
 					if err != nil {
 						log.Printf("downlod faild: %s", err)
 					}
@@ -205,37 +202,21 @@ func main() {
 	}
 
 	// fetch the available stations from all the regions
-	region, err := GetRegion()
+	asset, err := NewAsset()
 	if err != nil {
 		log.Fatal(err)
 	}
-	for _, ss := range region.Region {
-		for _, s := range ss.Stations {
-			if s.AreaID == AreaID {
-				AvailableStations = append(AvailableStations, s.ID)
-			}
-		}
-	}
-	for _, es := range ExtraStations {
-		dup := false
-		for _, s := range AvailableStations {
-			if es == s {
-				dup = true
-				break
-			}
-		}
-		if !dup {
-			AvailableStations = append(AvailableStations, es)
-		}
-	}
-	log.Printf("available stations in %s: %q", AreaID, AvailableStations)
+	// load the available station for AreaID
+	asset.LoadAvailableStations(AreaID)
+	// add extra stations
+	asset.AddExtraStations(ExtraStations)
 
 	// initialize the schedule holder
-	RunningSchedules = Schedules{}
+	asset.Schedules = Schedules{}
 
 	// put the runner to a scheduler
 	s := gocron.NewScheduler(Location)
-	job, err := s.Every(Interval).Do(run, ctx, client, Interval)
+	job, err := s.Every(Interval).Do(run, ctx, client, asset, Interval)
 	if err != nil {
 		log.Fatalf("job: %v, error: %v", job, err)
 	}

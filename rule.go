@@ -74,13 +74,13 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 			log.Printf("rule[%s] matched with sub-title: '%s'", r.Name, p.SubTitle)
 			return true
 		} else if strings.Contains(p.Desc, r.Keyword) {
-			log.Printf("rule[%s] matched with desc: '%s'", r.Name, p.Desc)
+			log.Printf("rule[%s] matched with desc: '%s'", r.Name, strings.ReplaceAll(p.Desc, "\n", ""))
 			return true
 		} else if strings.Contains(p.Pfm, r.Keyword) {
 			log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
 			return true
 		} else if strings.Contains(p.Info, r.Keyword) {
-			log.Printf("rule[%s] matched with info: '%s'", r.Name, p.Info)
+			log.Printf("rule[%s] matched with info: \n%s", r.Name, strings.ReplaceAll(p.Info, "\n", ""))
 			return true
 		}
 	}
