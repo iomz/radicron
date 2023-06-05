@@ -20,6 +20,9 @@ RUN apk add --no-cache ca-certificates \
     rtmpdump \
     tzdata
 
+WORKDIR /app
+
+COPY assets/ /app/assets/
 COPY --from=build /build/radicron /app/radicron
 
 # set timezone
