@@ -88,7 +88,7 @@ func TestHasRuleFor(t *testing.T) {
 		},
 	}
 	for _, tt := range rulestests {
-		res := tt.in.HasRuleFor(tt.sid)
+		res := tt.in.HasRuleForStationID(tt.sid)
 		if tt.out != res {
 			t.Errorf("(%v).HasRuleFor(\"%s\") => %v, want %v", tt.in, tt.sid, res, tt.out)
 		}
