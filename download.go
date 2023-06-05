@@ -41,6 +41,7 @@ func Download(
 	}
 
 	if asset.Schedules.HasDuplicate(stationID, prog) {
+		log.Printf("-skip duplicate [%s]%s (%s)", stationID, title, start)
 		return nil
 	}
 	asset.Schedules = append(asset.Schedules, &Schedule{
@@ -66,8 +67,7 @@ func Download(
 	}
 
 	if output.IsExist() {
-		log.Printf("skip [%s]%s at %s", stationID, title, start)
-		log.Printf("the output file already exists: %s", output.AbsPath())
+		log.Printf("-skip already exists: %s", output.AbsPath())
 		return nil
 	}
 
@@ -75,7 +75,7 @@ func Download(
 	uri, err := timeshiftProgM3U8(ctx, client, asset, stationID, prog)
 	if err != nil {
 		return fmt.Errorf(
-			"failed to get playlist.m3u8 for [%s]%s (%s): %s",
+			"playlist.m3u8 not available [%s]%s (%s): %s",
 			stationID,
 			title,
 			start,

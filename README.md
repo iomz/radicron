@@ -39,8 +39,14 @@ rules:
     title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～" # this can be a partial match
   citypop:
     keyword: "シティポップ" # search by keyword
+    window: 48h # only within the past window from the current time
   hiccorohee:
     pfm: "ヒコロヒー" # search by pfm
+  watchman:
+    station-id: LTBS
+    pfm: "宇多丸"
+    dow: # filter by day of the week (e.g, Mon, tue, WED)
+      - fri
 ```
 
 In addition, set `${RADIGO_HOME}` to set the download directory.
