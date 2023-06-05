@@ -23,6 +23,7 @@ func Download(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	client *radiko.Client,
+	asset *Asset,
 	prog radiko.Prog,
 	stationID string,
 ) error {
@@ -39,10 +40,10 @@ func Download(
 		return nil
 	}
 
-	if RunningSchedules.HasDuplicate(stationID, prog) {
+	if asset.Schedules.HasDuplicate(stationID, prog) {
 		return nil
 	}
-	RunningSchedules = append(RunningSchedules, &Schedule{
+	asset.Schedules = append(asset.Schedules, &Schedule{
 		StationID: stationID,
 		Prog:      prog,
 	})
@@ -71,7 +72,7 @@ func Download(
 	}
 
 	// fetch the recording m3u8 uri
-	uri, err := timeshiftProgM3U8(ctx, client, stationID, prog)
+	uri, err := timeshiftProgM3U8(ctx, client, asset, stationID, prog)
 	if err != nil {
 		return fmt.Errorf(
 			"failed to get playlist.m3u8 for [%s]%s (%s): %s",
@@ -267,18 +268,19 @@ func getChunklistFromM3U8(uri string) ([]string, error) {
 func timeshiftProgM3U8(
 	ctx context.Context,
 	client *radiko.Client,
+	asset *Asset,
 	stationID string,
 	prog radiko.Prog,
 ) (string, error) {
 	var req *http.Request
 	var err error
-	areaID := getArea(stationID)
 
-	token, ok := AreaTokens[areaID]
+	areaID := asset.GetAreaIDByStationID(stationID)
+
+	device, ok := asset.AreaDevices[areaID]
 	if !ok {
-		token = GetToken(ctx, client, areaID)
-		AreaTokens[areaID] = token
-		log.Printf("new token for %s: %s", areaID, token)
+		device = NewAuth(ctx, client, asset, areaID)
+		asset.AreaDevices[areaID] = device
 	}
 
 	u := *client.URL
@@ -298,9 +300,9 @@ func timeshiftProgM3U8(
 	req, _ = http.NewRequest("POST", u.String(), nil)
 	req = req.WithContext(ctx)
 	headers := map[string]string{
-		UserAgentHeader:       DalvikAgent,
+		UserAgentHeader:       device.UserAgent,
 		RadikoAreaIDHeader:    areaID,
-		RadikoAuthTokenHeader: token,
+		RadikoAuthTokenHeader: device.Token,
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
@@ -311,6 +313,5 @@ func timeshiftProgM3U8(
 	}
 	defer resp.Body.Close()
 
-	log.Println(resp.Status)
 	return getURI(resp.Body)
 }
