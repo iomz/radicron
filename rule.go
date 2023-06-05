@@ -19,7 +19,7 @@ func (rs Rules) HasRuleWithoutStationID() bool {
 	return false
 }
 
-func (rs Rules) HasRuleFor(stationID string) bool {
+func (rs Rules) HasRuleForStationID(stationID string) bool {
 	for _, r := range rs {
 		if r.StationID == stationID {
 			return true

@@ -27,6 +27,7 @@ var (
 	InitialDelay      time.Duration     // the initial delay to back off from
 	Interval          string            // the checking interval
 	Location          *time.Location    // the current location
+	RunningSchedules  Schedules         // the schedules to download
 )
 
 func configure(filename string) {
@@ -134,7 +135,7 @@ func run(ctx context.Context, client *radiko.Client, interval string) {
 	var wg sync.WaitGroup
 	for _, stationID := range AvailableStations {
 		if !rules.HasRuleWithoutStationID() && // search all stations
-			!rules.HasRuleFor(stationID) { // search this station
+			!rules.HasRuleForStationID(stationID) { // search this station
 			continue
 		}
 
@@ -228,6 +229,9 @@ func main() {
 		}
 	}
 	log.Printf("available stations in %s: %q", AreaID, AvailableStations)
+
+	// initialize the schedule holder
+	RunningSchedules = Schedules{}
 
 	// put the runner to a scheduler
 	s := gocron.NewScheduler(Location)
