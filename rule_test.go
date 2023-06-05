@@ -7,13 +7,21 @@ var ruletests = []struct {
 	out bool
 }{
 	{
-		&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "StationID"},
+		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "Pfm", "StationID", "Window"},
 		true,
 	},
 	{
-		&Rule{"", "", "", "", "", "", ""},
+		&Rule{"", "", []string{}, "", "", "", ""},
 		false,
 	},
+}
+
+func TestHasDoW(t *testing.T) {
+	for _, tt := range ruletests {
+		if tt.in.HasDoW() != tt.out {
+			t.Errorf("(%v).HasDoW => %v, want %v", tt.in, tt.in.HasDoW(), tt.out)
+		}
+	}
 }
 
 func TestHasPfm(t *testing.T) {
@@ -72,16 +80,16 @@ func TestHasRuleFor(t *testing.T) {
 	}{
 		{
 			Rules{
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "FMT"},
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "TBS"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			"FMT",
 			true,
 		},
 		{
 			Rules{
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "FMT"},
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "TBS"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			"MBS",
 			false,
@@ -102,15 +110,15 @@ func TestHasRuleWithoutStationID(t *testing.T) {
 	}{
 		{
 			Rules{
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", ""},
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "TBS"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "", "Window"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			true,
 		},
 		{
 			Rules{
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "FMT"},
-				&Rule{"Name", "Window", "Title", "Pfm", "Keyword", "AreaID", "TBS"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			false,
 		},

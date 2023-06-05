@@ -1,14 +1,18 @@
 area-id: JP13
 file-format: aac
-initial-delay: 60
 interval: 168h
-max-concurrency: 64
-max-retry: 8
 rules:
-    airship:
-        station-id: FMT
-        title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～"
-    citypop:
-        keyword: "シティポップ"
-    hiccorohee:
-        pfm: "ヒコロヒー"
+  airship:
+    station-id: FMT
+    title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～"
+  citypop:
+    keyword: "シティポップ"
+    window: 48h
+  hiccorohee:
+    pfm: "ヒコロヒー"
+  watchman:
+    station-id: LTBS
+    pfm: "宇多丸"
+    dow:
+      # filter by dow (e.g, Mon, tue, WED)
+      - fri

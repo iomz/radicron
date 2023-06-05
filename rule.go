@@ -29,13 +29,13 @@ func (rs Rules) HasRuleForStationID(stationID string) bool {
 }
 
 type Rule struct {
-	Name      string `mapstructure:"name"`       // required
-	Window    string `mapstructure:"window"`     // optional
-	Title     string `mapstructure:"title"`      // required if pfm and keyword are unset
-	Pfm       string `mapstructure:"pfm"`        // optional
-	Keyword   string `mapstructure:"keyword"`    // optional
-	AreaID    string `mapstructure:"area-id"`    // optional
-	StationID string `mapstructure:"station-id"` // optional
+	Name      string   `mapstructure:"name"`       // required
+	Title     string   `mapstructure:"title"`      // required if pfm and keyword are unset
+	DoW       []string `mapstructure:"dow"`        // optional
+	Keyword   string   `mapstructure:"keyword"`    // optional
+	Pfm       string   `mapstructure:"pfm"`        // optional
+	StationID string   `mapstructure:"station-id"` // optional
+	Window    string   `mapstructure:"window"`     // optional
 }
 
 // Match returns true if the rule matches the program
@@ -53,6 +53,27 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 		}
 		if startTime.Add(fetchWindow).Before(CurrentTime) {
 			return false // skip before the fetch window
+		}
+	}
+	if r.HasDoW() {
+		dow := map[string]time.Weekday{
+			"sun": time.Sunday,
+			"mon": time.Monday,
+			"tue": time.Tuesday,
+			"wed": time.Wednesday,
+			"thu": time.Thursday,
+			"fri": time.Friday,
+			"sat": time.Saturday,
+		}
+		st, _ := time.ParseInLocation(DatetimeLayout, p.Ft, Location)
+		dowMatch := false
+		for _, d := range r.DoW {
+			if st.Weekday() == dow[strings.ToLower(d)] {
+				dowMatch = true
+			}
+		}
+		if !dowMatch {
+			return false
 		}
 	}
 	if r.HasStationID() && r.StationID != stationID {
@@ -86,6 +107,10 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 	}
 	// both title and keyword are empty or not found
 	return false
+}
+
+func (r *Rule) HasDoW() bool {
+	return len(r.DoW) > 0
 }
 
 func (r *Rule) HasPfm() bool {

@@ -137,12 +137,12 @@ func run(ctx context.Context, client *radiko.Client, asset *Asset, interval stri
 		}
 
 		// fetch the weekly program
-		//log.Printf("fetching the %s program", stationID)
 		weeklyPrograms, err := client.GetWeeklyPrograms(ctx, stationID)
 		if err != nil {
-			log.Printf("failed to fetch the %s program: %v", stationID, err)
+			//log.Printf("failed to fetch the %s program: %v", stationID, err)
 			continue
 		}
+		log.Printf("checking the %s program", stationID)
 
 		// iterate through the rules to download
 		for _, r := range rules {
