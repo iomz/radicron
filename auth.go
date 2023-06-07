@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/yyoshiki41/go-radiko"
@@ -35,8 +36,9 @@ func NewAuth(ctx context.Context, client *radiko.Client, asset *Asset, areaID st
 	device.Token = resp.Header.Get(RadikoAuthTokenHeader)
 	offset, _ := strconv.ParseInt(resp.Header.Get(RadikoKeyOffsetHeader), 10, 64)
 	length, _ := strconv.ParseInt(resp.Header.Get(RadikoKeyLentghHeader), 10, 64)
-	fullkey, _ := base64.StdEncoding.DecodeString(FullkeyB64)
-	partial := base64.StdEncoding.EncodeToString([]byte(fullkey[offset : offset+length]))
+	blob, _ := os.ReadFile("assets/base64-full.key")
+	authKey, _ := base64.StdEncoding.DecodeString(string(blob))
+	partialKey := base64.StdEncoding.EncodeToString([]byte(authKey[offset : offset+length]))
 
 	location := asset.GenerateGPSForAreaID(areaID)
 
@@ -51,7 +53,7 @@ func NewAuth(ctx context.Context, client *radiko.Client, asset *Asset, areaID st
 		RadikoUserHeader:       device.UserID,
 		RadikoLocationHeader:   location,
 		RadikoConnectionHeader: device.Connection,
-		RadikoPartialKeyHeader: partial,
+		RadikoPartialKeyHeader: partialKey,
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)

@@ -6,12 +6,11 @@
 [![Docker](https://github.com/iomz/radicron/actions/workflows/docker.yml/badge.svg)](https://github.com/iomz/radicron/actions/workflows/docker.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally.
+Sometimes we miss our favorite shows on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally, from AoE.
 
 **Disclaimer**:
 
-- Only works from an IP address within Japan (currently).
-- Do not use this program for commercial purposes.
+- Never use this program for commercial purposes.
 
 ---
 
@@ -21,11 +20,12 @@ Sometimes we miss our favorite programs on [radiko](https://radiko.jp/) and they
 - [Try with Docker](#try-with-docker)
   - [Build the image yourself](#build-the-image-yourself)
 - [Credit](#credit)
+
 <!--toc:end-->
 
 # Configuration
 
-You first need to create a configuration file (`config.yml`) to list programs to look for:
+Create a configuration file (`config.yml`) to define rules for recording:
 
 ```yaml
 area-id: JP13 # if unset, default to "your" region
@@ -35,15 +35,15 @@ interval: 168h # fetch every 7 days (Valid time units are "ns", "us" (or "µs"),
 
 rules:
   airship: # name your rule as you like
-    station-id: FMT # (optional) the staion_id
+    station-id: FMT # (optional) the staion_id, if not available by default, automatically add this station to the watch list
     title: "GOODYEAR MUSIC AIRSHIP～シティポップ レイディオ～" # this can be a partial match
   citypop:
-    keyword: "シティポップ" # search by keyword
+    keyword: "シティポップ" # search by keyword (also a partial match)
     window: 48h # only within the past window from the current time
   hiccorohee:
     pfm: "ヒコロヒー" # search by pfm
   watchman:
-    station-id: LTBS
+    station-id: TBS
     pfm: "宇多丸"
     dow: # filter by day of the week (e.g, Mon, tue, WED)
       - fri
