@@ -9,6 +9,7 @@ import (
 
 // Prog contains the solicited program metadata
 type Prog struct {
+	ID        string
 	StationID string
 	Ft        string
 	To        string
@@ -37,6 +38,7 @@ func (ps *Progs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	stationID := xw.XMLStations.Station[0].StationID
 	for _, p := range xw.XMLStations.Station[0].Progs.Prog {
 		prog := Prog{
+			ID:        p.ID,
 			StationID: stationID,
 			Ft:        p.Ft,
 			To:        p.To,

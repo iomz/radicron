@@ -52,9 +52,7 @@ func Download(
 		log.Printf("-skip duplicate [%s]%s (%s)", prog.StationID, title, start)
 		return nil
 	}
-	asset.Schedules = append(asset.Schedules, &Schedule{
-		Prog: prog,
-	})
+	asset.Schedules = append(asset.Schedules, &prog)
 
 	// the output config
 	output, err := radigo.NewOutputConfig(
@@ -280,7 +278,8 @@ func timeshiftProgM3U8(
 
 	device, ok := asset.AreaDevices[areaID]
 	if !ok {
-		if err := NewAuth(ctx, areaID); err != nil {
+		device, err = asset.NewDevice(areaID)
+		if err != nil {
 			return "", err
 		}
 	}
@@ -304,7 +303,7 @@ func timeshiftProgM3U8(
 	headers := map[string]string{
 		UserAgentHeader:       device.UserAgent,
 		RadikoAreaIDHeader:    areaID,
-		RadikoAuthTokenHeader: device.Token,
+		RadikoAuthTokenHeader: device.AuthToken,
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
