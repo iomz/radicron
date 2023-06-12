@@ -1,13 +1,18 @@
-package main
+package radicron
 
 import (
-	"os"
+	"embed"
 	"strings"
 	"testing"
 )
 
+var (
+	//go:embed test/weekly-program-test.xml
+	WeeklyProgramTestXML embed.FS
+)
+
 func TestWeeklyProgramUnmarshal(t *testing.T) {
-	xmlFile, err := os.Open("test/weekly-program-test.xml")
+	xmlFile, err := WeeklyProgramTestXML.Open("test/weekly-program-test.xml")
 	if err != nil {
 		t.Error(err)
 	}
@@ -45,20 +50,6 @@ func TestWeeklyProgramUnmarshal(t *testing.T) {
 	if got != want {
 		t.Errorf("p.Title => %v, want %v", got, want)
 	}
-
-	/*
-		got = p.Desc
-		want = ""
-		if got != want {
-			t.Errorf("p.Desc => %v, want %v", got, want)
-		}
-
-		got = p.Info
-		want = ""
-		if got != want {
-			t.Errorf("p.Info => %v, want %v", got, want)
-		}
-	*/
 
 	got = p.Pfm
 	want = "山崎怜奈"

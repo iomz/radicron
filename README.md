@@ -1,9 +1,12 @@
-**_radicron_**
+![radicron](https://i.imgur.com/yVc93uh.png)
 
-[![GoDoc](https://godoc.org/github.com/iomz/radicron?status.svg)](https://godoc.org/github.com/iomz/radicron)
-[![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radicron)](https://goreportcard.com/report/github.com/iomz/radicron)
-[![codecov](https://codecov.io/gh/iomz/radicron/branch/main/graph/badge.svg?token=fjhUp7BLPB)](https://codecov.io/gh/iomz/radicron)
+[![Build Status](https://github.com/iomz/radicron/workflows/build/badge.svg)](https://github.com/iomz/radicron/actions?query=workflow%3Abuild)
 [![Docker](https://github.com/iomz/radicron/actions/workflows/docker.yml/badge.svg)](https://github.com/iomz/radicron/actions/workflows/docker.yml)
+
+[![Docker Image Size](https://ghcr-badge.egpl.dev/iomz/radicron/size?label=Image%20Size)](https://github.com/iomz/radicron/pkgs/container/radicron)
+[![GoDoc](https://godoc.org/github.com/iomz/radicron?status.svg)](https://godoc.org/github.com/iomz/radicron)
+[![Codecov](https://codecov.io/gh/iomz/radicron/branch/main/graph/badge.svg?token=fjhUp7BLPB)](https://codecov.io/gh/iomz/radicron)
+[![Go Report Card](https://goreportcard.com/badge/github.com/iomz/radicron)](https://goreportcard.com/report/github.com/iomz/radicron)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 Sometimes we miss our favorite shows on [radiko](https://radiko.jp/) and they get vanished from http://radiko.jp/#!/timeshift – let's just keep them automatically saved locally, from AoE.
@@ -16,12 +19,19 @@ Sometimes we miss our favorite shows on [radiko](https://radiko.jp/) and they ge
 
 <!--toc:start-->
 
+- [Installation](#installation)
 - [Configuration](#configuration)
 - [Try with Docker](#try-with-docker)
   - [Build the image yourself](#build-the-image-yourself)
 - [Credit](#credit)
 
 <!--toc:end-->
+
+# Installation
+
+```bash
+go install github.com/iomz/radicron/cmd/radicron@latest
+```
 
 # Configuration
 

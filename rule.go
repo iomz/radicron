@@ -1,4 +1,4 @@
-package main
+package radicron
 
 import (
 	"log"
@@ -8,7 +8,7 @@ import (
 
 type Rules []*Rule
 
-func (rs Rules) HasMatch(stationID string, p Prog) bool {
+func (rs Rules) HasMatch(stationID string, p *Prog) bool {
 	for _, r := range rs {
 		if r.Match(stationID, p) {
 			return true
@@ -49,7 +49,8 @@ type Rule struct {
 // 1. check the Window filter
 // 2. check the DoW filter
 // 3. check the StationID filter
-func (r *Rule) Match(stationID string, p Prog) bool {
+// TODO: reduce the complexity
+func (r *Rule) Match(stationID string, p *Prog) bool { //nolint:gocyclo
 	// 1. check Window
 	if r.HasWindow() {
 		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, Location)
@@ -129,15 +130,15 @@ func (r *Rule) HasDoW() bool {
 }
 
 func (r *Rule) HasPfm() bool {
-	return len(r.Pfm) != 0
+	return r.Pfm != ""
 }
 
 func (r *Rule) HasKeyword() bool {
-	return len(r.Keyword) != 0
+	return r.Keyword != ""
 }
 
 func (r *Rule) HasStationID() bool {
-	if len(r.StationID) == 0 ||
+	if r.StationID == "" ||
 		r.StationID == "*" {
 		return false
 	}
@@ -145,11 +146,11 @@ func (r *Rule) HasStationID() bool {
 }
 
 func (r *Rule) HasTitle() bool {
-	return len(r.Title) != 0
+	return r.Title != ""
 }
 
 func (r *Rule) HasWindow() bool {
-	return len(r.Window) != 0
+	return r.Window != ""
 }
 
 func (r *Rule) SetName(name string) {

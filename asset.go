@@ -1,8 +1,9 @@
-package main
+package radicron
 
 import (
 	"context"
 	cr "crypto/rand"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -10,13 +11,23 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
+)
+
+var (
+	//go:embed assets/base64-full.key
+	Base64FullKey embed.FS
+	//go:embed assets/coordinates.json
+	CoordinatesJSON embed.FS
+	//go:embed assets/regions.json
+	RegionsJSON embed.FS
+	//go:embed assets/versions.json
+	VersionsJSON embed.FS
 )
 
 type Area struct {
@@ -64,11 +75,11 @@ func (a *Asset) GenerateGPSForAreaID(areaID string) string {
 		rand.Shuffle(len(negpos), func(i, j int) {
 			negpos[i], negpos[j] = negpos[j], negpos[i]
 		})
-		lat := c.Lat + (rand.Float64()/40.0)*negpos[0]
+		lat := c.Lat + (rand.Float64()/40.0)*negpos[0] //nolint:gosec
 		rand.Shuffle(len(negpos), func(i, j int) {
 			negpos[i], negpos[j] = negpos[j], negpos[i]
 		})
-		lng := c.Lng + (rand.Float64()/40.0)*negpos[0]
+		lng := c.Lng + (rand.Float64()/40.0)*negpos[0] //nolint:gosec
 		return fmt.Sprintf("%.6f,%.6f,gps", lat, lng)
 	}
 	return ""
@@ -88,7 +99,7 @@ func (a *Asset) GetPartialKey(offset, length int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	partialKey := base64.StdEncoding.EncodeToString([]byte(authKey[offset : offset+length]))
+	partialKey := base64.StdEncoding.EncodeToString(authKey[offset : offset+length])
 	return partialKey, nil
 }
 
@@ -114,7 +125,7 @@ func (a *Asset) LoadAvailableStations(areaID string) {
 // NewDevice returns a pointer to a new authorized Device
 func (a *Asset) NewDevice(areaID string) (*Device, error) {
 	// generate userID
-	blob := make([]byte, 16)
+	blob := make([]byte, UserIDLength)
 	if _, err := cr.Read(blob); err != nil {
 		return &Device{}, err
 	}
@@ -162,7 +173,7 @@ func (a *Asset) NewDevice(areaID string) (*Device, error) {
 	model := ms[0]
 
 	// assign the detail
-	//Dalvik/2.1.0 (Linux; U; Android %SDK_VERSION%; %MODEL%/%BUILD%)
+	// Dalvik/2.1.0 (Linux; U; Android %SDK_VERSION%; %MODEL%/%BUILD%)
 	device.UserAgent = fmt.Sprintf(
 		"Dalvik/2.1.0 (Linux; U; Android %s; %s/%s)",
 		sdkVersion,
@@ -173,59 +184,10 @@ func (a *Asset) NewDevice(areaID string) (*Device, error) {
 	device.Name = fmt.Sprintf("%s.%s", sdk.ID, model)
 
 	// get token
-	client := a.DefaultClient
-	// auth1
-	req, _ := http.NewRequest("GET", "https://radiko.jp/v2/api/auth1", nil)
-	headers := map[string]string{
-		UserAgentHeader:        device.UserAgent,
-		RadikoAppHeader:        device.AppName,
-		RadikoAppVersionHeader: device.AppVersion,
-		RadikoDeviceHeader:     device.Name,
-		RadikoUserHeader:       device.UserID,
-	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err := client.Do(req)
+	err := device.Auth(a, areaID)
 	if err != nil {
 		return device, err
 	}
-	defer resp.Body.Close()
-	// auth2
-	device.AuthToken = resp.Header.Get(RadikoAuthTokenHeader)
-	offset, err := strconv.ParseInt(resp.Header.Get(RadikoKeyOffsetHeader), 10, 64)
-	if err != nil {
-		return device, err
-	}
-	length, err := strconv.ParseInt(resp.Header.Get(RadikoKeyLentghHeader), 10, 64)
-	if err != nil {
-		return device, err
-	}
-	partialKey, err := a.GetPartialKey(offset, length)
-	if err != nil {
-		return device, err
-	}
-	location := a.GenerateGPSForAreaID(areaID)
-	req, _ = http.NewRequest("GET", "https://radiko.jp/v2/api/auth2", nil)
-	headers = map[string]string{
-		UserAgentHeader:        device.UserAgent,
-		RadikoAppHeader:        device.AppName,
-		RadikoAppVersionHeader: device.AppVersion,
-		RadikoDeviceHeader:     device.Name,
-		RadikoAuthTokenHeader:  device.AuthToken,
-		RadikoUserHeader:       device.UserID,
-		RadikoLocationHeader:   location,
-		RadikoConnectionHeader: device.Connection,
-		RadikoPartialKeyHeader: partialKey,
-	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	resp, err = client.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return device, err
-	}
-	defer resp.Body.Close()
 
 	// save the device for areaID
 	a.AreaDevices[areaID] = device
@@ -274,13 +236,72 @@ type Device struct {
 	UserID     string
 }
 
+func (d *Device) Auth(a *Asset, areaID string) error {
+	client := a.DefaultClient
+	// auth1
+	req, _ := http.NewRequest("GET", "https://radiko.jp/v2/api/auth1", http.NoBody)
+	req = req.WithContext(context.Background())
+	headers := map[string]string{
+		UserAgentHeader:        d.UserAgent,
+		RadikoAppHeader:        d.AppName,
+		RadikoAppVersionHeader: d.AppVersion,
+		RadikoDeviceHeader:     d.Name,
+		RadikoUserHeader:       d.UserID,
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	// auth2
+	d.AuthToken = resp.Header.Get(RadikoAuthTokenHeader)
+	offset, err := strconv.ParseInt(resp.Header.Get(RadikoKeyOffsetHeader), 10, 64)
+	if err != nil {
+		return err
+	}
+	length, err := strconv.ParseInt(resp.Header.Get(RadikoKeyLentghHeader), 10, 64)
+	if err != nil {
+		return err
+	}
+	partialKey, err := a.GetPartialKey(offset, length)
+	if err != nil {
+		return err
+	}
+	location := a.GenerateGPSForAreaID(areaID)
+	req, _ = http.NewRequest("GET", "https://radiko.jp/v2/api/auth2", http.NoBody)
+	req = req.WithContext(context.Background())
+	headers = map[string]string{
+		UserAgentHeader:        d.UserAgent,
+		RadikoAppHeader:        d.AppName,
+		RadikoAppVersionHeader: d.AppVersion,
+		RadikoDeviceHeader:     d.Name,
+		RadikoAuthTokenHeader:  d.AuthToken,
+		RadikoUserHeader:       d.UserID,
+		RadikoLocationHeader:   location,
+		RadikoConnectionHeader: d.Connection,
+		RadikoPartialKeyHeader: partialKey,
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	resp, err = client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
 type Devices map[string]*Device
 
 type Regions map[string][]Area
 
 type Schedules []*Prog
 
-func (ss Schedules) HasDuplicate(prog Prog) bool {
+func (ss Schedules) HasDuplicate(prog *Prog) bool {
 	for _, s := range ss {
 		if s.ID == prog.ID {
 			return true
@@ -322,7 +343,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	// empty AreaDevices
 	asset.AreaDevices = map[string]*Device{}
 	// the base64 key
-	blob, err := os.ReadFile("assets/base64-full.key")
+	blob, err := Base64FullKey.ReadFile("assets/base64-full.key")
 	if err != nil {
 		return asset, err
 	}
@@ -337,7 +358,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	asset.Schedules = Schedules{}
 
 	// Region
-	regionsJSON, err := os.Open("assets/regions.json")
+	regionsJSON, err := RegionsJSON.Open("assets/regions.json")
 	if err != nil {
 		return asset, err
 	}
@@ -352,7 +373,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	}
 
 	// Coordinate
-	coordinatesJSON, err := os.Open("assets/coordinates.json")
+	coordinatesJSON, err := CoordinatesJSON.Open("assets/coordinates.json")
 	if err != nil {
 		return asset, err
 	}
@@ -385,7 +406,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	}
 
 	// Versions
-	versionsJSON, err := os.Open("assets/versions.json")
+	versionsJSON, err := VersionsJSON.Open("assets/versions.json")
 	if err != nil {
 		return asset, err
 	}

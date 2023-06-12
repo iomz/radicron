@@ -13,28 +13,24 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/iomz/radicron"
 	"github.com/spf13/viper"
 	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
 )
 
-var (
-	CurrentTime time.Time      // time.Time at runtime
-	Location    *time.Location // time.Location for TZTokyo
-)
-
 // reload config to set a context and returns Rules
-func reload(ctx context.Context, filename string) (Rules, error) {
+func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	// update CurrentTime
-	CurrentTime = time.Now().In(Location)
+	radicron.CurrentTime = time.Now().In(radicron.Location)
 
 	// init Rules
-	rules := Rules{}
+	rules := radicron.Rules{}
 	cwd, _ := os.Getwd()
 
 	// check ${RADIGO_HOME}
-	if len(os.Getenv("RADIGO_HOME")) == 0 {
-		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "./downloads"))
+	if os.Getenv("RADIGO_HOME") == "" {
+		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "downloads"))
 	}
 
 	// load params from a config file
@@ -79,14 +75,14 @@ func reload(ctx context.Context, filename string) (Rules, error) {
 	extraStations := viper.GetStringSlice("extra-stations")
 
 	// save the asset in the current context
-	asset := GetAsset(ctx)
+	asset := radicron.GetAsset(ctx)
 	asset.OutputFormat = fileFormat
 	asset.LoadAvailableStations(areaID)
 	asset.AddExtraStations(extraStations)
 
 	// load rules from the file
 	for name := range viper.GetStringMap("rules") {
-		rule := &Rule{}
+		rule := &radicron.Rule{}
 		err := viper.UnmarshalKey(fmt.Sprintf("rules.%s", name), rule)
 		if err != nil {
 			return rules, fmt.Errorf("error reading the rule: %s", err)
@@ -116,10 +112,10 @@ func run(wg *sync.WaitGroup, configFileName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ck := ContextKey("asset")
+	ck := radicron.ContextKey("asset")
 	for {
 		// replenish asset
-		asset, err := NewAsset(client)
+		asset, err := radicron.NewAsset(client)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -139,7 +135,7 @@ func run(wg *sync.WaitGroup, configFileName string) {
 			}
 
 			// fetch the weekly program
-			weeklyPrograms, err := FetchWeeklyPrograms(stationID)
+			weeklyPrograms, err := radicron.FetchWeeklyPrograms(stationID)
 			if err != nil {
 				log.Printf("failed to fetch the %s program: %v", stationID, err)
 				continue
@@ -149,7 +145,7 @@ func run(wg *sync.WaitGroup, configFileName string) {
 			// check each program
 			for _, p := range weeklyPrograms {
 				if rules.HasMatch(stationID, p) {
-					err = Download(wg, ctx, p)
+					err = radicron.Download(wg, ctx, p)
 					if err != nil {
 						log.Printf("downlod faild: %s", err)
 					}
@@ -161,6 +157,11 @@ func run(wg *sync.WaitGroup, configFileName string) {
 		log.Println("waiting for all the downloads to complete")
 		wg.Wait()
 
+		// if the next program is not found, check again 24 hours later
+		if asset.NextFetchTime == nil {
+			oneDayLater := radicron.CurrentTime.Add(radicron.OneDay * time.Hour)
+			asset.NextFetchTime = &oneDayLater
+		}
 		// sleep
 		log.Printf("fetching completed – sleeping until %v", asset.NextFetchTime)
 		// sleep until the next earliest program to be available
@@ -186,13 +187,6 @@ func main() {
 	// to change the flags on the default logger
 	if *enableDebug {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
-	}
-
-	// radiko is a Japanese service
-	var err error
-	Location, err = time.LoadLocation(TZTokyo)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	log.Println("starting radicron")

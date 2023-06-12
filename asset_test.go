@@ -1,4 +1,4 @@
-package main
+package radicron
 
 import (
 	"math"
@@ -84,7 +84,7 @@ func TestGenerateGPSForAreaID(t *testing.T) {
 	}
 	for _, tt := range gpstests {
 		got := asset.GenerateGPSForAreaID(tt.in)
-		if !tt.out && len(got) != 0 { // todo check gps
+		if !tt.out && got != "" { // todo check gps
 			t.Errorf("%v => want %v", got, tt.out)
 		} else if tt.out {
 			gps := strings.Split(got, ",")
@@ -229,7 +229,7 @@ func TestNewDevice(t *testing.T) {
 		t.Errorf("invalid UserAgent: %v", got)
 	}
 	got = device.AuthToken
-	if len(got) == 0 {
+	if got == "" {
 		t.Errorf("invalid AuthToken: %v", got)
 	}
 }
@@ -240,7 +240,7 @@ func TestSchedules(t *testing.T) {
 			ID: "12345",
 		},
 	}
-	p := Prog{
+	p := &Prog{
 		ID: "12345",
 	}
 	if !ss.HasDuplicate(p) {

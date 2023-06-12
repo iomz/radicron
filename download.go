@@ -1,4 +1,4 @@
-package main
+package radicron
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -23,20 +23,21 @@ var sem = make(chan struct{}, MaxConcurrency)
 func Download(
 	wg *sync.WaitGroup,
 	ctx context.Context,
-	prog Prog,
-) error {
+	prog *Prog,
+) (err error) {
 	asset := GetAsset(ctx)
 	title := prog.Title
 	start := prog.Ft
+	var startTime, nextEndTime time.Time
 
-	startTime, err := time.ParseInLocation(DatetimeLayout, start, Location)
+	startTime, err = time.ParseInLocation(DatetimeLayout, start, Location)
 	if err != nil {
 		return fmt.Errorf("invalid start time format '%s': %s", start, err)
 	}
 
 	// the program is in the future
 	if startTime.After(CurrentTime) {
-		nextEndTime, err := time.ParseInLocation(DatetimeLayout, prog.To, Location)
+		nextEndTime, err = time.ParseInLocation(DatetimeLayout, prog.To, Location)
 		if err != nil {
 			return fmt.Errorf("invalid end time format '%s': %s", start, err)
 		}
@@ -52,7 +53,7 @@ func Download(
 		log.Printf("-skip duplicate [%s]%s (%s)", prog.StationID, title, start)
 		return nil
 	}
-	asset.Schedules = append(asset.Schedules, &prog)
+	asset.Schedules = append(asset.Schedules, prog)
 
 	// the output config
 	output, err := radigo.NewOutputConfig(
@@ -67,7 +68,7 @@ func Download(
 	if err != nil {
 		return fmt.Errorf("failed to configure output: %s", err)
 	}
-	if err := output.SetupDir(); err != nil {
+	if err = output.SetupDir(); err != nil {
 		return fmt.Errorf("failed to setup the output dir: %s", err)
 	}
 	if output.IsExist() {
@@ -90,6 +91,27 @@ func Download(
 	wg.Add(1)
 	go downloadProgram(wg, ctx, prog, uri, output)
 	return nil
+}
+
+func buildM3U8RequestURI(prog *Prog) string {
+	u, err := url.Parse(APIPlaylistM3U8)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// set query parameters
+	urlQuery := u.Query()
+	params := map[string]string{
+		"station_id": prog.StationID,
+		"ft":         prog.Ft,
+		"to":         prog.To,
+		"l":          "15", // required?
+	}
+	for k, v := range params {
+		urlQuery.Set(k, v)
+	}
+	u.RawQuery = urlQuery.Encode()
+
+	return u.String()
 }
 
 func bulkDownload(list []string, output string) error {
@@ -125,7 +147,7 @@ func bulkDownload(list []string, output string) error {
 }
 
 func downloadLink(link, output string) error {
-	resp, err := http.Get(link)
+	resp, err := http.Get(link) //nolint:gosec,noctx
 	if err != nil {
 		return err
 	}
@@ -149,11 +171,12 @@ func downloadLink(link, output string) error {
 func downloadProgram(
 	wg *sync.WaitGroup, // the wg to notify
 	ctx context.Context, // the context for the request
-	prog Prog, // the program metadata
+	prog *Prog, // the program metadata
 	uri string, // the m3u8 URI for the program
 	output *radigo.OutputConfig, // the file configuration
 ) {
 	defer wg.Done()
+	var err error
 
 	chunklist, err := getChunklistFromM3U8(uri)
 	if err != nil {
@@ -168,7 +191,7 @@ func downloadProgram(
 	}
 	defer os.RemoveAll(aacDir) // clean up
 
-	if err := bulkDownload(chunklist, aacDir); err != nil {
+	if err = bulkDownload(chunklist, aacDir); err != nil {
 		log.Printf("failed to download aac files: %s", err)
 		return
 	}
@@ -185,7 +208,7 @@ func downloadProgram(
 	case radigo.AudioFormatMP3:
 		err = radigo.ConvertAACtoMP3(ctx, concatedFile, output.AbsPath())
 	default:
-		log.Fatal("invalid file format")
+		err = fmt.Errorf("invalid file format")
 	}
 
 	if err != nil {
@@ -241,7 +264,7 @@ func getChunklist(input io.Reader) ([]string, error) {
 
 // getChunklistFromM3U8 returns a slice of url.
 func getChunklistFromM3U8(uri string) ([]string, error) {
-	resp, err := http.Get(uri)
+	resp, err := http.Get(uri) //nolint:gosec,noctx
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +290,7 @@ func getURI(input io.Reader) (string, error) {
 // timeshiftProgM3U8 gets playlist.m3u8 for a Prog
 func timeshiftProgM3U8(
 	ctx context.Context,
-	prog Prog,
+	prog *Prog,
 ) (string, error) {
 	asset := GetAsset(ctx)
 	client := asset.DefaultClient
@@ -284,21 +307,8 @@ func timeshiftProgM3U8(
 		}
 	}
 
-	u := *client.URL
-	u.Path = path.Join(client.URL.Path, "v2/api/ts/playlist.m3u8")
-	// Add query parameters
-	urlQuery := u.Query()
-	params := map[string]string{
-		"station_id": prog.StationID,
-		"ft":         prog.Ft,
-		"to":         prog.To,
-		"l":          "15", // required?
-	}
-	for k, v := range params {
-		urlQuery.Set(k, v)
-	}
-	u.RawQuery = urlQuery.Encode()
-	req, _ = http.NewRequest("POST", u.String(), nil)
+	uri := buildM3U8RequestURI(prog)
+	req, _ = http.NewRequest("POST", uri, http.NoBody)
 	req = req.WithContext(ctx)
 	headers := map[string]string{
 		UserAgentHeader:       device.UserAgent,

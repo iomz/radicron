@@ -2,7 +2,7 @@ version: "3.9"
 services:
   radicron:
     build: .
-    image: iomz/radicron:latest
+    image: ghcr.io/iomz/radicron:latest
     container_name: radicron
     restart: unless-stopped
     user: "$UID:$GID"

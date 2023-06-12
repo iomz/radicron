@@ -1,4 +1,4 @@
-package main
+package radicron
 
 const (
 	// DatetimeLayout for time strings from radiko
@@ -15,14 +15,19 @@ const (
 	MaxConcurrency = 64
 	// MaxRetryAttempts for BackOffDelay
 	MaxRetryAttempts = 8
+	// OneDay is 24 hours
+	OneDay = 24
 	// OutputDatetimeLayout for downloaded files
 	OutputDatetimeLayout = "200601021504"
 	// TZTokyo for time location
 	TZTokyo = "Asia/Tokyo"
+	// UserIDLength for user-id
+	UserIDLength = 16
 
 	// API endpoints
 	// region full
-	APIRegionFull    = "http://radiko.jp/v3/station/region/full.xml"
+	APIRegionFull    = "https://radiko.jp/v3/station/region/full.xml"
+	APIPlaylistM3U8  = "https://radiko.jp/v2/api/ts/playlist.m3u8"
 	APIWeeklyProgram = "https://radiko.jp/v3/program/station/weekly/%s.xml"
 
 	// HTTP Headers
@@ -34,7 +39,7 @@ const (
 	RadikoDeviceHeader     = "X-Radiko-Device"
 	RadikoUserHeader       = "X-Radiko-User"
 	// auth1 res
-	RadikoAuthTokenHeader = "X-Radiko-AuthToken"
+	RadikoAuthTokenHeader = "X-Radiko-AuthToken" //nolint:gosec
 	RadikoKeyLentghHeader = "X-Radiko-KeyLength"
 	RadikoKeyOffsetHeader = "X-Radiko-KeyOffset"
 	// auth2 req
