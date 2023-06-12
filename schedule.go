@@ -1,14 +1,12 @@
 package main
 
-import "github.com/yyoshiki41/go-radiko"
-
 type Schedules []*Schedule
 
-func (ss Schedules) HasDuplicate(stationID string, prog radiko.Prog) bool {
+func (ss Schedules) HasDuplicate(prog Prog) bool {
 	for _, s := range ss {
 		// for the same title
 		if s.Prog.Title == prog.Title {
-			if s.StationID != stationID {
+			if s.Prog.StationID != prog.StationID {
 				// it has the same title at a different station
 				return true
 			} else if s.Prog.Ft == prog.Ft {
@@ -21,6 +19,5 @@ func (ss Schedules) HasDuplicate(stationID string, prog radiko.Prog) bool {
 }
 
 type Schedule struct {
-	StationID string
-	Prog      radiko.Prog
+	Prog Prog
 }

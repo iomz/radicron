@@ -15,7 +15,6 @@ import (
 
 	"github.com/bogem/id3v2"
 	"github.com/grafov/m3u8"
-	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
 )
 
@@ -24,8 +23,7 @@ var sem = make(chan struct{}, MaxConcurrency)
 func Download(
 	wg *sync.WaitGroup,
 	ctx context.Context,
-	prog radiko.Prog,
-	stationID string,
+	prog Prog,
 ) error {
 	asset := GetAsset(ctx)
 	title := prog.Title
@@ -50,13 +48,12 @@ func Download(
 	}
 
 	// the program is already to be downloaded
-	if asset.Schedules.HasDuplicate(stationID, prog) {
-		log.Printf("-skip duplicate [%s]%s (%s)", stationID, title, start)
+	if asset.Schedules.HasDuplicate(prog) {
+		log.Printf("-skip duplicate [%s]%s (%s)", prog.StationID, title, start)
 		return nil
 	}
 	asset.Schedules = append(asset.Schedules, &Schedule{
-		StationID: stationID,
-		Prog:      prog,
+		Prog: prog,
 	})
 
 	// the output config
@@ -64,7 +61,7 @@ func Download(
 		fmt.Sprintf(
 			"%s_%s_%s",
 			startTime.In(Location).Format(OutputDatetimeLayout),
-			stationID,
+			prog.StationID,
 			title,
 		),
 		asset.OutputFormat,
@@ -81,17 +78,17 @@ func Download(
 	}
 
 	// fetch the recording m3u8 uri
-	uri, err := timeshiftProgM3U8(ctx, stationID, prog)
+	uri, err := timeshiftProgM3U8(ctx, prog)
 	if err != nil {
 		return fmt.Errorf(
 			"playlist.m3u8 not available [%s]%s (%s): %s",
-			stationID,
+			prog.StationID,
 			title,
 			start,
 			err,
 		)
 	}
-	log.Printf("start downloading [%s]%s (%s): %s", stationID, title, start, uri)
+	log.Printf("start downloading [%s]%s (%s): %s", prog.StationID, title, start, uri)
 	wg.Add(1)
 	go downloadProgram(wg, ctx, prog, uri, output)
 	return nil
@@ -154,7 +151,7 @@ func downloadLink(link, output string) error {
 func downloadProgram(
 	wg *sync.WaitGroup, // the wg to notify
 	ctx context.Context, // the context for the request
-	prog radiko.Prog, // the program metadata
+	prog Prog, // the program metadata
 	uri string, // the m3u8 URI for the program
 	output *radigo.OutputConfig, // the file configuration
 ) {
@@ -272,15 +269,14 @@ func getURI(input io.Reader) (string, error) {
 // timeshiftProgM3U8 gets playlist.m3u8 for a Prog
 func timeshiftProgM3U8(
 	ctx context.Context,
-	stationID string,
-	prog radiko.Prog,
+	prog Prog,
 ) (string, error) {
 	asset := GetAsset(ctx)
 	client := asset.DefaultClient
 	var req *http.Request
 	var err error
 
-	areaID := asset.GetAreaIDByStationID(stationID)
+	areaID := asset.GetAreaIDByStationID(prog.StationID)
 
 	device, ok := asset.AreaDevices[areaID]
 	if !ok {
@@ -294,7 +290,7 @@ func timeshiftProgM3U8(
 	// Add query parameters
 	urlQuery := u.Query()
 	params := map[string]string{
-		"station_id": stationID,
+		"station_id": prog.StationID,
 		"ft":         prog.Ft,
 		"to":         prog.To,
 		"l":          "15", // required?

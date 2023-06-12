@@ -15,12 +15,15 @@ const (
 	MaxConcurrency = 64
 	// MaxRetryAttempts for BackOffDelay
 	MaxRetryAttempts = 8
-	// The API for region full
-	RegionFullAPI = "http://radiko.jp/v3/station/region/full.xml"
 	// OutputDatetimeLayout for downloaded files
 	OutputDatetimeLayout = "200601021504"
 	// TZTokyo for time location
 	TZTokyo = "Asia/Tokyo"
+
+	// API endpoints
+	// region full
+	APIRegionFull    = "http://radiko.jp/v3/station/region/full.xml"
+	APIWeeklyProgram = "https://radiko.jp/v3/program/station/weekly/%s.xml"
 
 	// HTTP Headers
 	// auth1 req

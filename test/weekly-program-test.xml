@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<radiko>
+  <ttl>1800</ttl>
+  <srvtime>1686563913</srvtime>
+  <stations>
+    <station id="FMT">
+      <name>TOKYO FM</name>
+      <progs>
+        <date>20230605</date>
+        <prog dur="6900" ft="20230605130000" ftl="1300" id="9832429167" master_id="" to="20230605145500" tol="1455">
+          <title>山崎怜奈の誰かに話したかったこと。</title>
+          <url>https://www.tfm.co.jp/darehana</url>
+          <url_link></url_link>
+          <failed_record>0</failed_record>
+          <ts_in_ng>0</ts_in_ng>
+          <ts_out_ng>0</ts_out_ng>
+          <desc></desc>
+          <info>&lt;div class="station_content_description ">&lt;table border="0" cellpadding="5" > &lt;tr> &lt;td style="padding: 5px;">&lt;img src="https://pms-next-prod-api-program.s3.ap-northeast-1.amazonaws.com/image/person/32a0f9be-f0cd-4f87-bf4b-d7180ab10d57_sq.jpg" height="60" width="60" alt="山崎怜奈">&lt;/td> &lt;/tr>&lt;/table>&lt;br />&lt;br /> ★ラジオフレンズウィーク！ゲストはMAZZEL からRANさん・SEITOさん！&lt;br />&lt;br />★生活の”現場”で感じるモヤモヤ・ザラつき…&lt;br />山崎怜奈がリスナーのアナタとともに&lt;br />すっきりさせていく番組、略して「だれはな」！&lt;br />&lt;br />&lt;br />★＜13時05分ごろ：スピークアップ＞&lt;br />「『…ちょっとすいません。』先輩に物申したい事。 」&lt;br />&lt;br />今日は、先輩に皆さんが、先輩に物申したいこと、教えてください！&lt;br />※たとえば…&lt;br />「子供服を譲ってくださるのは大変嬉しいんですが…趣味が合わないんです。」&lt;br />「会社の先輩、いつもとんかつをご馳走してくれるんですが、本当はお蕎麦がいいです。」&lt;br />「後輩の私にだけ、全くプライベートの話を振らないですが、ちょっとは聴いてくれてもいいですよ？」&lt;br />などなど、小さな提言から世の中を揺るがす提言まで物申したいこと、教えてください！&lt;br />&lt;br />メッセージは、ダレハナWEBサイト、メッセージフォームからお願いします。&lt;br />Twitterでご参加の方は、「＃（カタカナで）ダレハナ」をつけてツイートしてください！&lt;br />本日は、メッセージをいただいた方の中から10名様にダレハナ特製ボールペンをプレゼントします！&lt;br />&lt;br />★＜14時00分ごろ：ゲストコーナー＞&lt;br />今週はラジオフレンズウィーク！&lt;br />局の垣根を飛び越え、様々なラジオ局でパーソナリティを務める方々をお迎えします。&lt;br />本日は、TOKYO FMで毎週日曜日・夜8時からオンエアしている「MAZZEL RADIO STATION」のパーソナリティーを務めるMAZZELから、RANさん、SEITOさんをお迎えします！&lt;br />お二人への質問、メッセージもお待ちしています！！&lt;br />&lt;br />&lt;br />&lt;br />&lt;a href="https://audee.jp/program/show/51824">★無料アプリAuDeeで「だれはな裏トーク」「#あのラジオがすごい」配信中！詳しくはこちら&lt;/a>&lt;br />&lt;a href="https://audee.jp/">★AuDeeについて&lt;/a> &lt;br />&lt;br /> ▽13:50〜 【 TOKYO FM NEWS 】&lt;br/>---&lt;br />&lt;br />▽13:53〜 【 交通情報 】&lt;br/>---&lt;br />&lt;br />▽14:20〜 【 毎日新聞 presents 誰かに話したくなるニュース。 】&lt;br/>毎週、毎日新聞の方に、今気になるニュースを解説していただくコーナー&lt;br />&lt;br />▽14:32〜 【 カワイ肝油ドロップ presents よ・み・き・か・せ 】&lt;br/>親子で楽しめる童話の朗読をお届けします。&lt;br />&lt;br />▽14:50〜 【 交通情報 】&lt;br/>---&lt;br />&lt;br /> 番組Webサイト：&lt;a href="https://www.tfm.co.jp/darehana">https://www.tfm.co.jp/darehana&lt;/a>&lt;br /> メッセージフォーム：&lt;a href="https://www.tfm.co.jp/f/darehana/form">https://www.tfm.co.jp/f/darehana/form&lt;/a>&lt;br /> &lt;br /> twitterハッシュタグは「&lt;a href="http://twitter.com/search?q=%23%E3%83%80%E3%83%AC%E3%83%8F%E3%83%8A">#ダレハナ&lt;/a>」&lt;br /> twitterアカウントは「&lt;a href="http://twitter.com/darehanaTFM">@darehanaTFM&lt;/a>」&lt;br />&lt;br />&lt;/div></info>
+          <pfm>山崎怜奈</pfm>
+          <img>https://radiko.jp/res/program/DEFAULT_IMAGE/FMT/u2vys0cxtq.jpg</img>
+          <tag>
+            <item>
+              <name>山崎怜奈</name>
+            </item>
+            <item>
+              <name>音楽との出会いが楽しめる</name>
+            </item>
+            <item>
+              <name>作業がはかどる</name>
+            </item>
+            <item>
+              <name>気分転換におすすめ</name>
+            </item>
+            <item>
+              <name>学生におすすめ</name>
+            </item>
+          </tag>
+          <genre>
+            <personality id="C010">
+              <name>タレント</name>
+            </personality>
+            <program id="P007">
+              <name>トーク</name>
+            </program>
+          </genre>
+        </prog>
+      </progs>
+    </station>
+  </stations>
+</radiko>

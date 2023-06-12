@@ -139,7 +139,7 @@ func run(wg *sync.WaitGroup, configFileName string) {
 			}
 
 			// fetch the weekly program
-			weeklyPrograms, err := client.GetWeeklyPrograms(ctx, stationID)
+			weeklyPrograms, err := FetchWeeklyPrograms(stationID)
 			if err != nil {
 				log.Printf("failed to fetch the %s program: %v", stationID, err)
 				continue
@@ -147,9 +147,9 @@ func run(wg *sync.WaitGroup, configFileName string) {
 			log.Printf("checking the %s program", stationID)
 
 			// check each program
-			for _, p := range weeklyPrograms[0].Progs.Progs {
+			for _, p := range weeklyPrograms {
 				if rules.HasMatch(stationID, p) {
-					err = Download(wg, ctx, p, stationID)
+					err = Download(wg, ctx, p)
 					if err != nil {
 						log.Printf("downlod faild: %s", err)
 					}

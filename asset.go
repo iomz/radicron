@@ -5,11 +5,9 @@ import (
 	cr "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"math/rand"
-	"net/http"
 	"os"
 	"reflect"
 	"time"
@@ -226,44 +224,6 @@ type Versions struct {
 	Apps   []string        `json:"apps"`
 	Models []string        `json:"models"`
 	SDKs   map[string]*SDK `json:"sdks"`
-}
-
-type XMLRegion struct {
-	Region []XMLStations `xml:"stations"`
-}
-
-type XMLStations struct {
-	Stations   []XMLStation `xml:"station"`
-	RegionID   string       `xml:"region_id,attr"`
-	RegionName string       `xml:"region_name,attr"`
-}
-
-type XMLStation struct {
-	ID     string `xml:"id"`
-	Name   string `xml:"name"`
-	AreaID string `xml:"area_id"`
-	Ruby   string `xml:"ruby"`
-}
-
-func FetchXMLRegion() (XMLRegion, error) {
-	region := XMLRegion{}
-
-	response, err := http.Get(RegionFullAPI)
-	if err != nil {
-		return region, err
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return region, err
-	}
-	defer response.Body.Close()
-
-	err = xml.Unmarshal([]byte(string(body)), &region)
-	if err != nil {
-		return region, err
-	}
-
-	return region, nil
 }
 
 func GetAsset(ctx context.Context) *Asset {

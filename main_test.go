@@ -35,7 +35,12 @@ func TestConfig(t *testing.T) {
 		t.Errorf("%v => want %v", asset.OutputFormat, radigo.AudioFormatAAC)
 	}
 
-	if len(rules) == 0 {
+	if len(rules) != 4 {
 		t.Error("error parsing the rules")
+	}
+
+	got := len(asset.AvailableStations)
+	if got != 13 {
+		t.Errorf("asset.AvailableStations: %v => want %v", got, 13)
 	}
 }
