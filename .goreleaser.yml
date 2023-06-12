@@ -6,6 +6,7 @@ before:
     - go mod tidy
 builds:
   - binary: radicron
+    main: .cmd/radicron
     flags:
       - -trimpath
     ldflags: -s -w -X main.Version={{ .Version }} -X main.CommitSHA={{ .Commit }}
