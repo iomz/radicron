@@ -27,7 +27,7 @@ type ProgGenre struct {
 }
 
 // Progs is a slice of Prog.
-type Progs []Prog
+type Progs []*Prog
 
 func (ps *Progs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var xw XMLWeekly
@@ -37,7 +37,7 @@ func (ps *Progs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 
 	stationID := xw.XMLStations.Station[0].StationID
 	for _, p := range xw.XMLStations.Station[0].Progs.Prog {
-		prog := Prog{
+		prog := &Prog{
 			ID:        p.ID,
 			StationID: stationID,
 			Ft:        p.Ft,
@@ -79,8 +79,8 @@ type XMLProg struct {
 }
 
 type XMLProgs struct {
-	Date string    `xml:"date"`
-	Prog []XMLProg `xml:"prog"`
+	Date string     `xml:"date"`
+	Prog []*XMLProg `xml:"prog"`
 }
 
 type XMLProgItem struct {
@@ -106,7 +106,7 @@ type XMLWeeklyStation struct {
 func FetchWeeklyPrograms(stationID string) (Progs, error) {
 	endpoint := fmt.Sprintf(APIWeeklyProgram, stationID)
 
-	resp, err := http.Get(endpoint)
+	resp, err := http.Get(endpoint) //nolint:gosec,noctx
 	if err != nil {
 		return Progs{}, err
 	}

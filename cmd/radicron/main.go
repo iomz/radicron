@@ -29,8 +29,8 @@ func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	cwd, _ := os.Getwd()
 
 	// check ${RADIGO_HOME}
-	if len(os.Getenv("RADIGO_HOME")) == 0 {
-		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "./downloads"))
+	if os.Getenv("RADIGO_HOME") == "" {
+		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "downloads"))
 	}
 
 	// load params from a config file
@@ -159,7 +159,7 @@ func run(wg *sync.WaitGroup, configFileName string) {
 
 		// if the next program is not found, check again 24 hours later
 		if asset.NextFetchTime == nil {
-			oneDayLater := radicron.CurrentTime.Add(24 * time.Hour)
+			oneDayLater := radicron.CurrentTime.Add(radicron.OneDay * time.Hour)
 			asset.NextFetchTime = &oneDayLater
 		}
 		// sleep

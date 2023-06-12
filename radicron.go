@@ -10,7 +10,7 @@ var (
 	Location    *time.Location
 )
 
-func init() {
+func init() { //nolint:gochecknoinits
 	var err error
 
 	Location, err = time.LoadLocation(TZTokyo)

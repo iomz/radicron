@@ -15,10 +15,14 @@ const (
 	MaxConcurrency = 64
 	// MaxRetryAttempts for BackOffDelay
 	MaxRetryAttempts = 8
+	// OneDay is 24 hours
+	OneDay = 24
 	// OutputDatetimeLayout for downloaded files
 	OutputDatetimeLayout = "200601021504"
 	// TZTokyo for time location
 	TZTokyo = "Asia/Tokyo"
+	// UserIDLength for user-id
+	UserIDLength = 16
 
 	// API endpoints
 	// region full
@@ -35,7 +39,7 @@ const (
 	RadikoDeviceHeader     = "X-Radiko-Device"
 	RadikoUserHeader       = "X-Radiko-User"
 	// auth1 res
-	RadikoAuthTokenHeader = "X-Radiko-AuthToken"
+	RadikoAuthTokenHeader = "X-Radiko-AuthToken" //nolint:gosec
 	RadikoKeyLentghHeader = "X-Radiko-KeyLength"
 	RadikoKeyOffsetHeader = "X-Radiko-KeyOffset"
 	// auth2 req

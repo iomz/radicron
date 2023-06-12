@@ -26,7 +26,7 @@ type XMLRegionStation struct {
 func FetchXMLRegion() (XMLRegion, error) {
 	region := XMLRegion{}
 
-	resp, err := http.Get(APIRegionFull)
+	resp, err := http.Get(APIRegionFull) //nolint:noctx
 	if err != nil {
 		return region, err
 	}
@@ -36,7 +36,7 @@ func FetchXMLRegion() (XMLRegion, error) {
 		return region, err
 	}
 
-	if err = xml.Unmarshal([]byte(string(body)), &region); err != nil {
+	if err := xml.Unmarshal([]byte(string(body)), &region); err != nil {
 		return region, err
 	}
 

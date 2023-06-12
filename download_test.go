@@ -11,7 +11,7 @@ var (
 )
 
 func TestBuildM3U8RequestURI(t *testing.T) {
-	prog := Prog{
+	prog := &Prog{
 		StationID: "FMT",
 		Ft:        "20230605130000",
 		To:        "20230605145500",

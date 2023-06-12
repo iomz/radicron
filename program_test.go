@@ -51,20 +51,6 @@ func TestWeeklyProgramUnmarshal(t *testing.T) {
 		t.Errorf("p.Title => %v, want %v", got, want)
 	}
 
-	/*
-		got = p.Desc
-		want = ""
-		if got != want {
-			t.Errorf("p.Desc => %v, want %v", got, want)
-		}
-
-		got = p.Info
-		want = ""
-		if got != want {
-			t.Errorf("p.Info => %v, want %v", got, want)
-		}
-	*/
-
 	got = p.Pfm
 	want = "山崎怜奈"
 	if got != want {
