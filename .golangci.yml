@@ -1,21 +1,4 @@
 linters-settings:
-  depguard:
-    # old configuration. TODO(ldez): must be removed
-    list-type: denylist
-    packages:
-      # logging is allowed only by logutils.Log, logrus
-      # is allowed to use only in logutils package
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      - github.com/sirupsen/logrus: "logging is allowed only by logutils.Log"
-    # new configuration
-    rules:
-      logger:
-        deny:
-          # logging is allowed only by logutils.Log,
-          # logrus is allowed to use only in logutils package.
-          - pkg: "github.com/sirupsen/logrus"
-            desc: logging is allowed only by logutils.Log
   dupl:
     threshold: 100
   funlen:
@@ -129,26 +112,6 @@ linters:
     # - prealloc
     # - testpackage
     # - wsl
-issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gomnd
-    - path: pkg/golinters/errcheck.go
-      text: "SA1019: errCfg.Exclude is deprecated: use ExcludeFunctions instead"
-    - path: pkg/commands/run.go
-      text: "SA1019: lsc.Errcheck.Exclude is deprecated: use ExcludeFunctions instead"
-    - path: pkg/commands/run.go
-      text: "SA1019: e.cfg.Run.Deadline is deprecated: Deadline exists for historical compatibility and should not be used."
-    - path: pkg/golinters/gofumpt.go
-      text: "SA1019: settings.LangVersion is deprecated: use the global `run.go` instead."
-    - path: pkg/golinters/staticcheck_common.go
-      text: "SA1019: settings.GoVersion is deprecated: use the global `run.go` instead."
-    - path: pkg/lint/lintersdb/manager.go
-      text: "SA1019: (.+).(GoVersion|LangVersion) is deprecated: use the global `run.go` instead."
-    - path: pkg/golinters/unused.go
-      text: "rangeValCopy: each iteration copies 160 bytes \\(consider pointers or indexing\\)"
 run:
   timeout: 5m
   skip-dirs:
