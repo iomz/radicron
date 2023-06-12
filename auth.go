@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/yyoshiki41/go-radiko"
 )
 
 // NewAuth retuns a new authorized device with token
-func NewAuth(ctx context.Context, client *radiko.Client, asset *Asset, areaID string) *Device {
+func NewAuth(ctx context.Context, areaID string) error {
+	asset := GetAsset(ctx)
+	client := asset.DefaultClient
 	// generate a new device
 	device := asset.NewDevice()
 
@@ -29,8 +29,9 @@ func NewAuth(ctx context.Context, client *radiko.Client, asset *Asset, areaID st
 		req.Header.Set(k, v)
 	}
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	device.Token = resp.Header.Get(RadikoAuthTokenHeader)
@@ -60,10 +61,9 @@ func NewAuth(ctx context.Context, client *radiko.Client, asset *Asset, areaID st
 	}
 	resp, err = client.Do(req)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	defer resp.Body.Close()
-
-	return device
+	asset.AreaDevices[areaID] = device
+	return nil
 }

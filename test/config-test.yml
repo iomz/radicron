@@ -1,6 +1,5 @@
 area-id: JP13
 file-format: aac
-interval: 168h
 rules:
   airship:
     station-id: FMT
@@ -14,5 +13,4 @@ rules:
     station-id: LTBS
     pfm: "宇多丸"
     dow:
-      # filter by dow (e.g, Mon, tue, WED)
       - fri

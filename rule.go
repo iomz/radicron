@@ -10,6 +10,15 @@ import (
 
 type Rules []*Rule
 
+func (rs Rules) HasMatch(stationID string, p radiko.Prog) bool {
+	for _, r := range rs {
+		if r.Match(stationID, p) {
+			return true
+		}
+	}
+	return false
+}
+
 func (rs Rules) HasRuleWithoutStationID() bool {
 	for _, r := range rs {
 		if !r.HasStationID() {

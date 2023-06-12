@@ -9,13 +9,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/yyoshiki41/go-radiko"
 )
 
 func TestFetchXMLRegion(t *testing.T) {
 	const nRegions = 8
 	const nStations = 111
 
-	region, err := fetchXMLRegion()
+	region, err := FetchXMLRegion()
 	if err != nil {
 		t.Error("failed to fetch the full region list")
 	}
@@ -38,8 +39,12 @@ func TestNewAsset(t *testing.T) {
 	const nAreas = 47
 	const nRegions = 7
 	const nStations = 111
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
 
-	asset, err := NewAsset()
+	asset, err := NewAsset(client)
 	if err != nil {
 		t.Errorf("failed to parse the asset %s", err)
 	}
@@ -81,7 +86,12 @@ func TestNewAsset(t *testing.T) {
 }
 
 func TestGenerateGPSForAreaID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var gpstests = []struct {
 		in  string
 		out bool
@@ -115,7 +125,12 @@ func TestGenerateGPSForAreaID(t *testing.T) {
 }
 
 func TestGetAreaIDByStationID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var areatests = []struct {
 		in  string
 		out string
@@ -142,7 +157,12 @@ func TestGetAreaIDByStationID(t *testing.T) {
 }
 
 func TestGetStationIDsByAreaID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var stationtests = []struct {
 		in  string
 		out []string
@@ -179,7 +199,12 @@ func TestGetStationIDsByAreaID(t *testing.T) {
 }
 
 func TestNewDevice(t *testing.T) {
-	a, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	a, _ := NewAsset(client)
 	device := a.NewDevice()
 
 	if device.AppName != "aSmartPhone7a" {

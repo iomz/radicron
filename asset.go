@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	cr "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -11,112 +12,29 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"time"
+
+	"github.com/yyoshiki41/go-radiko"
+	"github.com/yyoshiki41/radigo"
 )
-
-const RegionFullAPI = "http://radiko.jp/v3/station/region/full.xml"
-
-type XMLRegion struct {
-	Region []XMLStations `xml:"stations"`
-}
-
-type XMLStations struct {
-	Stations   []XMLStation `xml:"station"`
-	RegionID   string       `xml:"region_id,attr"`
-	RegionName string       `xml:"region_name,attr"`
-}
-
-type XMLStation struct {
-	ID     string `xml:"id"`
-	Name   string `xml:"name"`
-	AreaID string `xml:"area_id"`
-	Ruby   string `xml:"ruby"`
-}
-
-func fetchXMLRegion() (XMLRegion, error) {
-	region := XMLRegion{}
-
-	response, err := http.Get(RegionFullAPI)
-	if err != nil {
-		return region, err
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return region, err
-	}
-	defer response.Body.Close()
-
-	err = xml.Unmarshal([]byte(string(body)), &region)
-	if err != nil {
-		return region, err
-	}
-
-	return region, nil
-}
-
-type Coordinates map[string]*Coordinate
-
-type Coordinate struct {
-	Lat float64
-	Lng float64
-}
-
-type Regions map[string][]Area
 
 type Area struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type Stations map[string]*Station
-
-type Station struct {
-	Areas []string
-	Name  string
-	Ruby  string
-}
-
-type SDK struct {
-	ID     string   `json:"sdk"`
-	Builds []string `json:"builds"`
-}
-
-type Versions struct {
-	Apps   []string        `json:"apps"`
-	Models []string        `json:"models"`
-	SDKs   map[string]*SDK `json:"sdks"`
-}
-
 type Asset struct {
 	AvailableStations []string
-	AreaDevices       map[string]*Device
+	AreaDevices       Devices
 	Coordinates       Coordinates
+	DefaultClient     *radiko.Client
+	NextFetchTime     *time.Time
+	OutputFormat      string
 	Regions           Regions
+	Rules             Rules
 	Schedules         Schedules
 	Stations          Stations
 	Versions          Versions
-}
-
-// UnmarshalJSON loads up Coordinates with Regions
-func (a *Asset) UnmarshalJSON(b []byte) error {
-	var cs map[string][]float64
-	if err := json.Unmarshal(b, &cs); err != nil {
-		return err
-	}
-
-	a.Coordinates = Coordinates{}
-	for areaName, latlng := range cs {
-		for _, areas := range a.Regions {
-			for _, area := range areas {
-				if areaName == area.Name {
-					a.Coordinates[area.ID] = &Coordinate{
-						Lat: latlng[0],
-						Lng: latlng[1],
-					}
-				}
-			}
-		}
-	}
-	return nil
 }
 
 // AddExtraStations appends stations to AvailableStations
@@ -181,18 +99,8 @@ func (a *Asset) LoadAvailableStations(areaID string) {
 	a.AvailableStations = a.GetStationIDsByAreaID(areaID)
 }
 
-type Device struct {
-	AppName    string
-	AppVersion string
-	Connection string
-	Name       string
-	Token      string
-	UserAgent  string
-	UserID     string
-}
-
 // NewDevice returns a pointer to a new Device
-func (a Asset) NewDevice() *Device {
+func (a *Asset) NewDevice() *Device {
 	// generate userID
 	blob := make([]byte, 16)
 	if _, err := cr.Read(blob); err != nil {
@@ -255,8 +163,130 @@ func (a Asset) NewDevice() *Device {
 	return device
 }
 
-func NewAsset() (*Asset, error) {
+// UnmarshalJSON loads up Coordinates with Regions
+func (a *Asset) UnmarshalJSON(b []byte) error {
+	var cs map[string][]float64
+	if err := json.Unmarshal(b, &cs); err != nil {
+		return err
+	}
+
+	a.Coordinates = Coordinates{}
+	for areaName, latlng := range cs {
+		for _, areas := range a.Regions {
+			for _, area := range areas {
+				if areaName == area.Name {
+					a.Coordinates[area.ID] = &Coordinate{
+						Lat: latlng[0],
+						Lng: latlng[1],
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+type ContextKey string
+
+type Coordinate struct {
+	Lat float64
+	Lng float64
+}
+
+type Coordinates map[string]*Coordinate
+
+type Device struct {
+	AppName    string
+	AppVersion string
+	Connection string
+	Name       string
+	Token      string
+	UserAgent  string
+	UserID     string
+}
+
+type Devices map[string]*Device
+
+type Regions map[string][]Area
+
+type SDK struct {
+	ID     string   `json:"sdk"`
+	Builds []string `json:"builds"`
+}
+
+type Station struct {
+	Areas []string
+	Name  string
+	Ruby  string
+}
+
+type Stations map[string]*Station
+
+type Versions struct {
+	Apps   []string        `json:"apps"`
+	Models []string        `json:"models"`
+	SDKs   map[string]*SDK `json:"sdks"`
+}
+
+type XMLRegion struct {
+	Region []XMLStations `xml:"stations"`
+}
+
+type XMLStations struct {
+	Stations   []XMLStation `xml:"station"`
+	RegionID   string       `xml:"region_id,attr"`
+	RegionName string       `xml:"region_name,attr"`
+}
+
+type XMLStation struct {
+	ID     string `xml:"id"`
+	Name   string `xml:"name"`
+	AreaID string `xml:"area_id"`
+	Ruby   string `xml:"ruby"`
+}
+
+func FetchXMLRegion() (XMLRegion, error) {
+	region := XMLRegion{}
+
+	response, err := http.Get(RegionFullAPI)
+	if err != nil {
+		return region, err
+	}
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return region, err
+	}
+	defer response.Body.Close()
+
+	err = xml.Unmarshal([]byte(string(body)), &region)
+	if err != nil {
+		return region, err
+	}
+
+	return region, nil
+}
+
+func GetAsset(ctx context.Context) *Asset {
+	k := ContextKey("asset")
+	asset, ok := ctx.Value(k).(*Asset)
+	if !ok {
+		return nil
+	}
+	return asset
+}
+
+func NewAsset(client *radiko.Client) (*Asset, error) {
 	asset := &Asset{}
+	// empty AreaDevices
+	asset.AreaDevices = map[string]*Device{}
+	// default client
+	asset.DefaultClient = client
+	// empty FileFormat
+	asset.OutputFormat = radigo.AudioFormatAAC
+	// nil *time.Time
+	asset.NextFetchTime = nil
+	// empty Schedules
+	asset.Schedules = Schedules{}
 
 	// Region
 	regionsJSON, err := os.Open("assets/regions.json")
@@ -283,7 +313,7 @@ func NewAsset() (*Asset, error) {
 	}
 
 	// Station
-	xmlRegion, err := fetchXMLRegion()
+	xmlRegion, err := FetchXMLRegion()
 	if err != nil {
 		return asset, err
 	}
