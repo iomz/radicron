@@ -6,24 +6,19 @@ before:
     - go mod tidy
 builds:
   - binary: radicron
-    main: .cmd/radicron
+    main: ./cmd/radicron
     flags:
       - -trimpath
     ldflags: -s -w -X main.Version={{ .Version }} -X main.CommitSHA={{ .Commit }}
     goos:
       - linux
-      - freebsd
-      - openbsd
       - darwin
       - windows
     goarch:
       - amd64
       - arm64
       - 386
-      - arm
-      - ppc64le
     goarm:
-      - 6
       - 7
 archives:
   - format_overrides:
