@@ -7,8 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -90,6 +90,27 @@ func Download(
 	wg.Add(1)
 	go downloadProgram(wg, ctx, prog, uri, output)
 	return nil
+}
+
+func buildM3U8RequestURI(prog Prog) string {
+	u, err := url.Parse(APIPlaylistM3U8)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// set query parameters
+	urlQuery := u.Query()
+	params := map[string]string{
+		"station_id": prog.StationID,
+		"ft":         prog.Ft,
+		"to":         prog.To,
+		"l":          "15", // required?
+	}
+	for k, v := range params {
+		urlQuery.Set(k, v)
+	}
+	u.RawQuery = urlQuery.Encode()
+
+	return u.String()
 }
 
 func bulkDownload(list []string, output string) error {
@@ -284,21 +305,8 @@ func timeshiftProgM3U8(
 		}
 	}
 
-	u := *client.URL
-	u.Path = path.Join(client.URL.Path, "v2/api/ts/playlist.m3u8")
-	// Add query parameters
-	urlQuery := u.Query()
-	params := map[string]string{
-		"station_id": prog.StationID,
-		"ft":         prog.Ft,
-		"to":         prog.To,
-		"l":          "15", // required?
-	}
-	for k, v := range params {
-		urlQuery.Set(k, v)
-	}
-	u.RawQuery = urlQuery.Encode()
-	req, _ = http.NewRequest("POST", u.String(), nil)
+	uri := buildM3U8RequestURI(prog)
+	req, _ = http.NewRequest("POST", uri, nil)
 	req = req.WithContext(ctx)
 	headers := map[string]string{
 		UserAgentHeader:       device.UserAgent,

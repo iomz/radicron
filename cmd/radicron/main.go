@@ -157,6 +157,11 @@ func run(wg *sync.WaitGroup, configFileName string) {
 		log.Println("waiting for all the downloads to complete")
 		wg.Wait()
 
+		// if the next program is not found, check again 24 hours later
+		if asset.NextFetchTime == nil {
+			oneDayLater := radicron.CurrentTime.Add(24 * time.Hour)
+			asset.NextFetchTime = &oneDayLater
+		}
 		// sleep
 		log.Printf("fetching completed – sleeping until %v", asset.NextFetchTime)
 		// sleep until the next earliest program to be available
