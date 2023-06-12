@@ -9,37 +9,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/yyoshiki41/go-radiko"
 )
-
-func TestFetchXMLRegion(t *testing.T) {
-	const nRegions = 8
-	const nStations = 111
-
-	region, err := fetchXMLRegion()
-	if err != nil {
-		t.Error("failed to fetch the full region list")
-	}
-	if len(region.Region) != nRegions {
-		t.Errorf("failed to fetch all the regions (%v instead of %v)", len(region.Region), nRegions)
-	}
-	stationCount := 0
-	for _, stations := range region.Region {
-		for _, station := range stations.Stations {
-			t.Logf("%v (%v) %v\n", stations.RegionID, station.AreaID, station.Name)
-			stationCount += 1
-		}
-	}
-	if stationCount < nStations {
-		t.Errorf("failed to fetch all the stations (%v instead of %v)", stationCount, nStations)
-	}
-}
 
 func TestNewAsset(t *testing.T) {
 	const nAreas = 47
 	const nRegions = 7
 	const nStations = 111
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
 
-	asset, err := NewAsset()
+	asset, err := NewAsset(client)
 	if err != nil {
 		t.Errorf("failed to parse the asset %s", err)
 	}
@@ -81,7 +63,12 @@ func TestNewAsset(t *testing.T) {
 }
 
 func TestGenerateGPSForAreaID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var gpstests = []struct {
 		in  string
 		out bool
@@ -115,7 +102,12 @@ func TestGenerateGPSForAreaID(t *testing.T) {
 }
 
 func TestGetAreaIDByStationID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var areatests = []struct {
 		in  string
 		out string
@@ -142,7 +134,12 @@ func TestGetAreaIDByStationID(t *testing.T) {
 }
 
 func TestGetStationIDsByAreaID(t *testing.T) {
-	asset, _ := NewAsset()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
 	var stationtests = []struct {
 		in  string
 		out []string
@@ -178,9 +175,35 @@ func TestGetStationIDsByAreaID(t *testing.T) {
 	}
 }
 
+func TestGetPartialKey(t *testing.T) {
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	asset, _ := NewAsset(client)
+	partialKey, err := asset.GetPartialKey(128, 16)
+	if err != nil {
+		t.Error(err)
+	}
+	want := "hXL82UFnK/lqxRp3RUCtUw=="
+	if partialKey != want {
+		t.Errorf("partialKey %v => want %v", partialKey, want)
+	}
+}
+
 func TestNewDevice(t *testing.T) {
-	a, _ := NewAsset()
-	device := a.NewDevice()
+	client, err := radiko.New("")
+	if err != nil {
+		t.Error(err)
+	}
+
+	a, _ := NewAsset(client)
+	device, err := a.NewDevice("JP13")
+
+	if err != nil {
+		t.Error(err)
+	}
 
 	if device.AppName != "aSmartPhone7a" {
 		t.Errorf("%v => want %v", device.AppName, "aSmartPhone7a")
@@ -204,5 +227,23 @@ func TestNewDevice(t *testing.T) {
 	got = device.UserAgent
 	if !strings.HasPrefix(got, "Dalvik/2.1.0") {
 		t.Errorf("invalid UserAgent: %v", got)
+	}
+	got = device.AuthToken
+	if len(got) == 0 {
+		t.Errorf("invalid AuthToken: %v", got)
+	}
+}
+
+func TestSchedules(t *testing.T) {
+	ss := Schedules{
+		&Prog{
+			ID: "12345",
+		},
+	}
+	p := Prog{
+		ID: "12345",
+	}
+	if !ss.HasDuplicate(p) {
+		t.Errorf("hasDuplicate: %v", p)
 	}
 }

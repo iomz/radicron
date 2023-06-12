@@ -31,8 +31,6 @@ Create a configuration file (`config.yml`) to define rules for recording:
 area-id: JP13 # if unset, default to "your" region
 extra-stations:
   - ALPHA-STATION # include stations not in your region
-interval: 168h # fetch every 7 days (Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h" and must be positive)
-
 rules:
   airship: # name your rule as you like
     station-id: FMT # (optional) the staion_id, if not available by default, automatically add this station to the watch list

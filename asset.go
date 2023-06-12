@@ -1,122 +1,42 @@
 package main
 
 import (
+	"context"
 	cr "crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"os"
 	"reflect"
+	"strconv"
+	"time"
+
+	"github.com/yyoshiki41/go-radiko"
+	"github.com/yyoshiki41/radigo"
 )
-
-const RegionFullAPI = "http://radiko.jp/v3/station/region/full.xml"
-
-type XMLRegion struct {
-	Region []XMLStations `xml:"stations"`
-}
-
-type XMLStations struct {
-	Stations   []XMLStation `xml:"station"`
-	RegionID   string       `xml:"region_id,attr"`
-	RegionName string       `xml:"region_name,attr"`
-}
-
-type XMLStation struct {
-	ID     string `xml:"id"`
-	Name   string `xml:"name"`
-	AreaID string `xml:"area_id"`
-	Ruby   string `xml:"ruby"`
-}
-
-func fetchXMLRegion() (XMLRegion, error) {
-	region := XMLRegion{}
-
-	response, err := http.Get(RegionFullAPI)
-	if err != nil {
-		return region, err
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return region, err
-	}
-	defer response.Body.Close()
-
-	err = xml.Unmarshal([]byte(string(body)), &region)
-	if err != nil {
-		return region, err
-	}
-
-	return region, nil
-}
-
-type Coordinates map[string]*Coordinate
-
-type Coordinate struct {
-	Lat float64
-	Lng float64
-}
-
-type Regions map[string][]Area
 
 type Area struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type Stations map[string]*Station
-
-type Station struct {
-	Areas []string
-	Name  string
-	Ruby  string
-}
-
-type SDK struct {
-	ID     string   `json:"sdk"`
-	Builds []string `json:"builds"`
-}
-
-type Versions struct {
-	Apps   []string        `json:"apps"`
-	Models []string        `json:"models"`
-	SDKs   map[string]*SDK `json:"sdks"`
-}
-
 type Asset struct {
 	AvailableStations []string
-	AreaDevices       map[string]*Device
+	AreaDevices       Devices
+	Base64Key         string
 	Coordinates       Coordinates
+	DefaultClient     *radiko.Client
+	NextFetchTime     *time.Time
+	OutputFormat      string
 	Regions           Regions
+	Rules             Rules
 	Schedules         Schedules
 	Stations          Stations
 	Versions          Versions
-}
-
-// UnmarshalJSON loads up Coordinates with Regions
-func (a *Asset) UnmarshalJSON(b []byte) error {
-	var cs map[string][]float64
-	if err := json.Unmarshal(b, &cs); err != nil {
-		return err
-	}
-
-	a.Coordinates = Coordinates{}
-	for areaName, latlng := range cs {
-		for _, areas := range a.Regions {
-			for _, area := range areas {
-				if areaName == area.Name {
-					a.Coordinates[area.ID] = &Coordinate{
-						Lat: latlng[0],
-						Lng: latlng[1],
-					}
-				}
-			}
-		}
-	}
-	return nil
 }
 
 // AddExtraStations appends stations to AvailableStations
@@ -162,6 +82,16 @@ func (a *Asset) GetAreaIDByStationID(stationID string) string {
 	return ""
 }
 
+// GetPartialKey returns the partial key for auth2 API
+func (a *Asset) GetPartialKey(offset, length int64) (string, error) {
+	authKey, err := base64.StdEncoding.DecodeString(a.Base64Key)
+	if err != nil {
+		return "", err
+	}
+	partialKey := base64.StdEncoding.EncodeToString([]byte(authKey[offset : offset+length]))
+	return partialKey, nil
+}
+
 // GetStationIDsByAreaID returns a slice of StationIDs
 func (a *Asset) GetStationIDsByAreaID(areaID string) []string {
 	sids := []string{}
@@ -181,22 +111,12 @@ func (a *Asset) LoadAvailableStations(areaID string) {
 	a.AvailableStations = a.GetStationIDsByAreaID(areaID)
 }
 
-type Device struct {
-	AppName    string
-	AppVersion string
-	Connection string
-	Name       string
-	Token      string
-	UserAgent  string
-	UserID     string
-}
-
-// NewDevice returns a pointer to a new Device
-func (a Asset) NewDevice() *Device {
+// NewDevice returns a pointer to a new authorized Device
+func (a *Asset) NewDevice(areaID string) (*Device, error) {
 	// generate userID
 	blob := make([]byte, 16)
 	if _, err := cr.Read(blob); err != nil {
-		return nil
+		return &Device{}, err
 	}
 	userID := hex.EncodeToString(blob)
 
@@ -252,11 +172,169 @@ func (a Asset) NewDevice() *Device {
 	//X-Radiko-Device: %SDK_ID%.%MODEL%
 	device.Name = fmt.Sprintf("%s.%s", sdk.ID, model)
 
-	return device
+	// get token
+	client := a.DefaultClient
+	// auth1
+	req, _ := http.NewRequest("GET", "https://radiko.jp/v2/api/auth1", nil)
+	headers := map[string]string{
+		UserAgentHeader:        device.UserAgent,
+		RadikoAppHeader:        device.AppName,
+		RadikoAppVersionHeader: device.AppVersion,
+		RadikoDeviceHeader:     device.Name,
+		RadikoUserHeader:       device.UserID,
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return device, err
+	}
+	defer resp.Body.Close()
+	// auth2
+	device.AuthToken = resp.Header.Get(RadikoAuthTokenHeader)
+	offset, err := strconv.ParseInt(resp.Header.Get(RadikoKeyOffsetHeader), 10, 64)
+	if err != nil {
+		return device, err
+	}
+	length, err := strconv.ParseInt(resp.Header.Get(RadikoKeyLentghHeader), 10, 64)
+	if err != nil {
+		return device, err
+	}
+	partialKey, err := a.GetPartialKey(offset, length)
+	if err != nil {
+		return device, err
+	}
+	location := a.GenerateGPSForAreaID(areaID)
+	req, _ = http.NewRequest("GET", "https://radiko.jp/v2/api/auth2", nil)
+	headers = map[string]string{
+		UserAgentHeader:        device.UserAgent,
+		RadikoAppHeader:        device.AppName,
+		RadikoAppVersionHeader: device.AppVersion,
+		RadikoDeviceHeader:     device.Name,
+		RadikoAuthTokenHeader:  device.AuthToken,
+		RadikoUserHeader:       device.UserID,
+		RadikoLocationHeader:   location,
+		RadikoConnectionHeader: device.Connection,
+		RadikoPartialKeyHeader: partialKey,
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	resp, err = client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return device, err
+	}
+	defer resp.Body.Close()
+
+	// save the device for areaID
+	a.AreaDevices[areaID] = device
+	return device, nil
 }
 
-func NewAsset() (*Asset, error) {
+// UnmarshalJSON loads up Coordinates with Regions
+func (a *Asset) UnmarshalJSON(b []byte) error {
+	var cs map[string][]float64
+	if err := json.Unmarshal(b, &cs); err != nil {
+		return err
+	}
+
+	a.Coordinates = Coordinates{}
+	for areaName, latlng := range cs {
+		for _, areas := range a.Regions {
+			for _, area := range areas {
+				if areaName == area.Name {
+					a.Coordinates[area.ID] = &Coordinate{
+						Lat: latlng[0],
+						Lng: latlng[1],
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+type ContextKey string
+
+type Coordinate struct {
+	Lat float64
+	Lng float64
+}
+
+type Coordinates map[string]*Coordinate
+
+type Device struct {
+	AppName    string
+	AppVersion string
+	AuthToken  string
+	Connection string
+	Name       string
+	UserAgent  string
+	UserID     string
+}
+
+type Devices map[string]*Device
+
+type Regions map[string][]Area
+
+type Schedules []*Prog
+
+func (ss Schedules) HasDuplicate(prog Prog) bool {
+	for _, s := range ss {
+		if s.ID == prog.ID {
+			return true
+		}
+	}
+	return false
+}
+
+type SDK struct {
+	ID     string   `json:"sdk"`
+	Builds []string `json:"builds"`
+}
+
+type Station struct {
+	Areas []string
+	Name  string
+	Ruby  string
+}
+
+type Stations map[string]*Station
+
+type Versions struct {
+	Apps   []string        `json:"apps"`
+	Models []string        `json:"models"`
+	SDKs   map[string]*SDK `json:"sdks"`
+}
+
+func GetAsset(ctx context.Context) *Asset {
+	k := ContextKey("asset")
+	asset, ok := ctx.Value(k).(*Asset)
+	if !ok {
+		return nil
+	}
+	return asset
+}
+
+func NewAsset(client *radiko.Client) (*Asset, error) {
 	asset := &Asset{}
+	// empty AreaDevices
+	asset.AreaDevices = map[string]*Device{}
+	// the base64 key
+	blob, err := os.ReadFile("assets/base64-full.key")
+	if err != nil {
+		return asset, err
+	}
+	asset.Base64Key = string(blob)
+	// default client
+	asset.DefaultClient = client
+	// empty FileFormat
+	asset.OutputFormat = radigo.AudioFormatAAC
+	// nil *time.Time
+	asset.NextFetchTime = nil
+	// empty Schedules
+	asset.Schedules = Schedules{}
 
 	// Region
 	regionsJSON, err := os.Open("assets/regions.json")
@@ -264,7 +342,10 @@ func NewAsset() (*Asset, error) {
 		return asset, err
 	}
 	defer regionsJSON.Close()
-	blob, _ := io.ReadAll(regionsJSON)
+	blob, err = io.ReadAll(regionsJSON)
+	if err != nil {
+		return asset, err
+	}
 	err = json.Unmarshal(blob, &asset.Regions)
 	if err != nil {
 		return asset, err
@@ -283,7 +364,7 @@ func NewAsset() (*Asset, error) {
 	}
 
 	// Station
-	xmlRegion, err := fetchXMLRegion()
+	xmlRegion, err := FetchXMLRegion()
 	if err != nil {
 		return asset, err
 	}

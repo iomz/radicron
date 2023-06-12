@@ -20,6 +20,11 @@ const (
 	// TZTokyo for time location
 	TZTokyo = "Asia/Tokyo"
 
+	// API endpoints
+	// region full
+	APIRegionFull    = "http://radiko.jp/v3/station/region/full.xml"
+	APIWeeklyProgram = "https://radiko.jp/v3/program/station/weekly/%s.xml"
+
 	// HTTP Headers
 	// auth1 req
 	UserAgentHeader        = "User-Agent"

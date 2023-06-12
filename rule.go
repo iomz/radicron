@@ -4,11 +4,18 @@ import (
 	"log"
 	"strings"
 	"time"
-
-	"github.com/yyoshiki41/go-radiko"
 )
 
 type Rules []*Rule
+
+func (rs Rules) HasMatch(stationID string, p Prog) bool {
+	for _, r := range rs {
+		if r.Match(stationID, p) {
+			return true
+		}
+	}
+	return false
+}
 
 func (rs Rules) HasRuleWithoutStationID() bool {
 	for _, r := range rs {
@@ -39,7 +46,11 @@ type Rule struct {
 }
 
 // Match returns true if the rule matches the program
-func (r *Rule) Match(stationID string, p radiko.Prog) bool {
+// 1. check the Window filter
+// 2. check the DoW filter
+// 3. check the StationID filter
+func (r *Rule) Match(stationID string, p Prog) bool {
+	// 1. check Window
 	if r.HasWindow() {
 		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, Location)
 		if err != nil {
@@ -55,6 +66,7 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 			return false // skip before the fetch window
 		}
 	}
+	// 2. check DoW
 	if r.HasDoW() {
 		dow := map[string]time.Weekday{
 			"sun": time.Sunday,
@@ -76,9 +88,11 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 			return false
 		}
 	}
+	// 3. check StationID
 	if r.HasStationID() && r.StationID != stationID {
 		return false // skip mismatching rules for stationID
 	}
+	// 4. Match
 	if r.HasTitle() && strings.Contains(p.Title, r.Title) {
 		log.Printf("rule[%s] matched with title: '%s'", r.Name, p.Title)
 		return true
@@ -86,16 +100,8 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 		log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
 		return true
 	} else if r.HasKeyword() {
-		// TODO: search for tags
-		//for _, tag := range p.Tags
 		if strings.Contains(p.Title, r.Keyword) {
 			log.Printf("rule[%s] matched with title: '%s'", r.Name, p.Title)
-			return true
-		} else if strings.Contains(p.SubTitle, r.Keyword) {
-			log.Printf("rule[%s] matched with sub-title: '%s'", r.Name, p.SubTitle)
-			return true
-		} else if strings.Contains(p.Desc, r.Keyword) {
-			log.Printf("rule[%s] matched with desc: '%s'", r.Name, strings.ReplaceAll(p.Desc, "\n", ""))
 			return true
 		} else if strings.Contains(p.Pfm, r.Keyword) {
 			log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
@@ -103,6 +109,15 @@ func (r *Rule) Match(stationID string, p radiko.Prog) bool {
 		} else if strings.Contains(p.Info, r.Keyword) {
 			log.Printf("rule[%s] matched with info: \n%s", r.Name, strings.ReplaceAll(p.Info, "\n", ""))
 			return true
+		} else if strings.Contains(p.Desc, r.Keyword) {
+			log.Printf("rule[%s] matched with desc: '%s'", r.Name, strings.ReplaceAll(p.Desc, "\n", ""))
+			return true
+		}
+		for _, tag := range p.Tags {
+			if strings.Contains(tag, r.Keyword) {
+				log.Printf("rule[%s] matched with tag: '%s'", r.Name, tag)
+				return true
+			}
 		}
 	}
 	// both title and keyword are empty or not found
