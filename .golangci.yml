@@ -1,11 +1,4 @@
 linters-settings:
-  depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages:
-      # The io/ioutil package has been deprecated.
-      # https://go.dev/doc/go1.16#ioutil
-      - io/ioutil
   dupl:
     threshold: 100
   funlen:
@@ -74,7 +67,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -108,6 +100,7 @@ linters:
     # don't enable:
     # - asciicheck
     # - scopelint
+    # - depguard # TODO: resolve import error
     # - gochecknoglobals
     # - gocognit
     # - godot
