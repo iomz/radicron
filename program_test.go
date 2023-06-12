@@ -1,13 +1,18 @@
-package main
+package radicron
 
 import (
-	"os"
+	"embed"
 	"strings"
 	"testing"
 )
 
+var (
+	//go:embed test/weekly-program-test.xml
+	WeeklyProgramTestXML embed.FS
+)
+
 func TestWeeklyProgramUnmarshal(t *testing.T) {
-	xmlFile, err := os.Open("test/weekly-program-test.xml")
+	xmlFile, err := WeeklyProgramTestXML.Open("test/weekly-program-test.xml")
 	if err != nil {
 		t.Error(err)
 	}

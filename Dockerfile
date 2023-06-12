@@ -7,9 +7,11 @@ RUN mkdir -p /build
 COPY go.mod /build/
 COPY go.sum /build/
 COPY *.go /build/
+COPY assets/ /build/assets/
+COPY cmd/radicron/ /build/cmd/radicron/
 WORKDIR /build
 RUN go mod vendor
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o radicron .
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -o radicron ./cmd/radicron/...
 
 # export to a single layer image
 FROM alpine:latest
@@ -22,7 +24,6 @@ RUN apk add --no-cache ca-certificates \
 
 WORKDIR /app
 
-COPY assets/ /app/assets/
 COPY --from=build /build/radicron /app/radicron
 
 # set timezone

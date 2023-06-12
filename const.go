@@ -1,4 +1,4 @@
-package main
+package radicron
 
 const (
 	// DatetimeLayout for time strings from radiko

@@ -1,8 +1,9 @@
-package main
+package radicron
 
 import (
 	"context"
 	cr "crypto/rand"
+	"embed"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -10,13 +11,23 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/yyoshiki41/go-radiko"
 	"github.com/yyoshiki41/radigo"
+)
+
+var (
+	//go:embed assets/base64-full.key
+	Base64FullKey embed.FS
+	//go:embed assets/coordinates.json
+	CoordinatesJSON embed.FS
+	//go:embed assets/regions.json
+	RegionsJSON embed.FS
+	//go:embed assets/versions.json
+	VersionsJSON embed.FS
 )
 
 type Area struct {
@@ -322,7 +333,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	// empty AreaDevices
 	asset.AreaDevices = map[string]*Device{}
 	// the base64 key
-	blob, err := os.ReadFile("assets/base64-full.key")
+	blob, err := Base64FullKey.ReadFile("assets/base64-full.key")
 	if err != nil {
 		return asset, err
 	}
@@ -337,7 +348,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	asset.Schedules = Schedules{}
 
 	// Region
-	regionsJSON, err := os.Open("assets/regions.json")
+	regionsJSON, err := RegionsJSON.Open("assets/regions.json")
 	if err != nil {
 		return asset, err
 	}
@@ -352,7 +363,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	}
 
 	// Coordinate
-	coordinatesJSON, err := os.Open("assets/coordinates.json")
+	coordinatesJSON, err := CoordinatesJSON.Open("assets/coordinates.json")
 	if err != nil {
 		return asset, err
 	}
@@ -385,7 +396,7 @@ func NewAsset(client *radiko.Client) (*Asset, error) {
 	}
 
 	// Versions
-	versionsJSON, err := os.Open("assets/versions.json")
+	versionsJSON, err := VersionsJSON.Open("assets/versions.json")
 	if err != nil {
 		return asset, err
 	}
