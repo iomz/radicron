@@ -9,7 +9,6 @@ builds:
     main: ./cmd/radicron
     flags:
       - -trimpath
-    ldflags: -s -w -X main.Version={{ .Version }} -X main.CommitSHA={{ .Commit }}
     goos:
       - linux
       - darwin
@@ -29,7 +28,7 @@ archives:
       amd64: x86_64
 signs:
   - artifacts: checksum
-  - args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
