@@ -1,6 +1,8 @@
 package radicron
 
 const (
+	// BufferMinutes for fetching the playlist.m3u8 chunks
+	BufferMinutes = 5
 	// DatetimeLayout for time strings from radiko
 	DatetimeLayout = "20060102150405"
 	// DefaultArea for radiko are
@@ -11,10 +13,14 @@ const (
 	DefaultInterval = "168h"
 	// Language for ID3v2 tags
 	ID3v2LangJPN = "jpn"
+	// Kilobytes for the metric bytes
+	Kilobytes = 1024
 	// DefaultMaxConcurrents
 	MaxConcurrency = 64
 	// MaxRetryAttempts for BackOffDelay
 	MaxRetryAttempts = 8
+	// MinimumOutputSize in bytes for the downloaded audio
+	MinimumOutputSize = 3 * Kilobytes * Kilobytes
 	// OneDay is 24 hours
 	OneDay = 24
 	// OutputDatetimeLayout for downloaded files
