@@ -19,6 +19,7 @@ type Prog struct {
 	Pfm       string
 	Tags      []string
 	Genre     ProgGenre
+	M3U8      string
 }
 
 type ProgGenre struct {
@@ -46,6 +47,7 @@ func (ps *Progs) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 			Desc:      p.Desc,
 			Info:      p.Info,
 			Pfm:       p.Pfm,
+			M3U8:      "",
 		}
 		prog.Genre = ProgGenre{
 			Personality: p.Genre.Personality.Name,

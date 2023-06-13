@@ -43,7 +43,8 @@ func Download(
 		}
 		// update the next fetching time
 		if asset.NextFetchTime == nil || asset.NextFetchTime.After(nextEndTime) {
-			asset.NextFetchTime = &nextEndTime
+			next := nextEndTime.Add(BufferMinutes * time.Minute)
+			asset.NextFetchTime = &next
 		}
 		return nil
 	}
@@ -88,8 +89,9 @@ func Download(
 		)
 	}
 	log.Printf("start downloading [%s]%s (%s): %s", prog.StationID, title, start, uri)
+	prog.M3U8 = uri
 	wg.Add(1)
-	go downloadProgram(wg, ctx, prog, uri, output)
+	go downloadProgram(wg, ctx, prog, output)
 	return nil
 }
 
@@ -172,13 +174,12 @@ func downloadProgram(
 	wg *sync.WaitGroup, // the wg to notify
 	ctx context.Context, // the context for the request
 	prog *Prog, // the program metadata
-	uri string, // the m3u8 URI for the program
 	output *radigo.OutputConfig, // the file configuration
 ) {
 	defer wg.Done()
 	var err error
 
-	chunklist, err := getChunklistFromM3U8(uri)
+	chunklist, err := getChunklistFromM3U8(prog.M3U8)
 	if err != nil {
 		log.Printf("failed to get chunklist: %s", err)
 		return
@@ -212,33 +213,34 @@ func downloadProgram(
 	}
 
 	if err != nil {
-		log.Printf("failed to output a result file: %s", err)
+		log.Printf("failed to write the output file: %s", err)
 		return
 	}
+
+	info, err := os.Stat(output.AbsPath())
 	if err != nil {
-		log.Printf("failed to open the output file: %s", err)
+		log.Printf("failed to stat the output file: %s", err)
 		return
 	}
-	tag, err := id3v2.Open(output.AbsPath(), id3v2.Options{Parse: true})
-	if err != nil {
-		log.Printf("error while opening the output file: %s", err)
+
+	if info.Size() < int64(MinimumOutputSize) {
+		log.Printf("the output file is too small: %v MB", float32(info.Size())/Kilobytes/Kilobytes)
+		err = os.Remove(output.AbsPath())
+		if err != nil {
+			log.Printf("failed to remove the file: %v", err)
+			return
+		}
+		next := time.Now().In(Location).Add(BufferMinutes * time.Minute)
+		asset := GetAsset(ctx)
+		asset.NextFetchTime = &next
+		log.Printf("removed the file, retry downloading at %v", next)
+		return
 	}
-	defer tag.Close()
 
-	// Set tags
-	tag.SetTitle(output.FileBaseName)
-	tag.SetArtist(prog.Pfm)
-	tag.SetAlbum(prog.Title)
-	tag.SetYear(prog.Ft[:4])
-	tag.AddCommentFrame(id3v2.CommentFrame{
-		Encoding:    id3v2.EncodingUTF8,
-		Language:    ID3v2LangJPN,
-		Description: prog.Info,
-	})
-
-	// write tag to the aac
-	if err = tag.Save(); err != nil {
-		log.Printf("error while saving a tag: %s", err)
+	err = writeID3Tag(output, prog)
+	if err != nil {
+		log.Printf("ID3v2: %v", err)
+		return
 	}
 
 	// finish downloading the file
@@ -325,4 +327,30 @@ func timeshiftProgM3U8(
 	defer resp.Body.Close()
 
 	return getURI(resp.Body)
+}
+
+func writeID3Tag(output *radigo.OutputConfig, prog *Prog) error {
+	tag, err := id3v2.Open(output.AbsPath(), id3v2.Options{Parse: true})
+	if err != nil {
+		return fmt.Errorf("error while opening the output file: %s", err)
+	}
+	defer tag.Close()
+
+	// Set tags
+	tag.SetTitle(output.FileBaseName)
+	tag.SetArtist(prog.Pfm)
+	tag.SetAlbum(prog.Title)
+	tag.SetYear(prog.Ft[:4])
+	tag.AddCommentFrame(id3v2.CommentFrame{
+		Encoding:    id3v2.EncodingUTF8,
+		Language:    ID3v2LangJPN,
+		Description: prog.Info,
+	})
+
+	// write tag to the aac
+	if err = tag.Save(); err != nil {
+		return fmt.Errorf("error while saving a tag: %s", err)
+	}
+
+	return nil
 }
