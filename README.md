@@ -91,7 +91,7 @@ UID=$(id -u) GID=$(id -g) docker compose up -d
 
 ## Build the image yourself
 
-In case the [image](https://hub.docker.com/r/iomz/radicron/tags) is not available for your platform:
+In case the [image](https://github.com/iomz/radicron/pkgs/container/radicron) is not available for your platform:
 
 ```console
 docker compose build
