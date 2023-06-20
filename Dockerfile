@@ -19,7 +19,6 @@ FROM alpine:latest
 # install some required binaries
 RUN apk add --no-cache ca-certificates \
     ffmpeg \
-    rtmpdump \
     tzdata
 
 WORKDIR /app
