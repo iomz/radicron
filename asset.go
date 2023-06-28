@@ -20,12 +20,16 @@ import (
 )
 
 var (
+	// Base64FullKey holds the /assets/flutter_assets/assets/key/android.jpg in the v8 APK
 	//go:embed assets/base64-full.key
 	Base64FullKey embed.FS
+	// CoordinatesJSON is a JSON contains the base GPS locations
 	//go:embed assets/coordinates.json
 	CoordinatesJSON embed.FS
+	// RegionsJSON is a JSON contains the region mapping
 	//go:embed assets/regions.json
 	RegionsJSON embed.FS
+	// VersionsJSON is a JSON contains the valid SDK versions
 	//go:embed assets/versions.json
 	VersionsJSON embed.FS
 )

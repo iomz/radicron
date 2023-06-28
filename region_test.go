@@ -19,7 +19,7 @@ func TestFetchXMLRegion(t *testing.T) {
 	for _, stations := range region.Region {
 		for _, station := range stations.Stations {
 			t.Logf("%v (%v) %v\n", stations.RegionID, station.AreaID, station.Name)
-			stationCount += 1
+			stationCount++
 		}
 	}
 	if stationCount < nStations {

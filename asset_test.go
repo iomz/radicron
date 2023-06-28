@@ -33,7 +33,7 @@ func TestNewAsset(t *testing.T) {
 	areaCount := 0
 	for region := range asset.Regions {
 		for range asset.Regions[region] {
-			areaCount += 1
+			areaCount++
 		}
 	}
 	if areaCount != nAreas {

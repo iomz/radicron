@@ -145,7 +145,7 @@ func run(wg *sync.WaitGroup, configFileName string) {
 			// check each program
 			for _, p := range weeklyPrograms {
 				if rules.HasMatch(stationID, p) {
-					err = radicron.Download(wg, ctx, p)
+					err = radicron.Download(ctx, wg, p)
 					if err != nil {
 						log.Printf("downlod faild: %s", err)
 					}

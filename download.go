@@ -21,8 +21,8 @@ import (
 var sem = make(chan struct{}, MaxConcurrency)
 
 func Download(
-	wg *sync.WaitGroup,
 	ctx context.Context,
+	wg *sync.WaitGroup,
 	prog *Prog,
 ) (err error) {
 	asset := GetAsset(ctx)
@@ -91,7 +91,7 @@ func Download(
 	log.Printf("start downloading [%s]%s (%s): %s", prog.StationID, title, start, uri)
 	prog.M3U8 = uri
 	wg.Add(1)
-	go downloadProgram(wg, ctx, prog, output)
+	go downloadProgram(ctx, wg, prog, output)
 	return nil
 }
 
@@ -171,8 +171,8 @@ func downloadLink(link, output string) error {
 // downloadProgram manages the download for the given program
 // in a go routine and notify the wg when finished
 func downloadProgram(
-	wg *sync.WaitGroup, // the wg to notify
 	ctx context.Context, // the context for the request
+	wg *sync.WaitGroup, // the wg to notify
 	prog *Prog, // the program metadata
 	output *radigo.OutputConfig, // the file configuration
 ) {
