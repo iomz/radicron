@@ -1,6 +1,80 @@
 package radicron
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+var matchtests = []struct {
+	in        *Rule
+	stationID string
+	p         *Prog
+	out       bool
+}{
+	{
+		&Rule{"matchtests", "Title", []string{}, "Keyword", "Pfm", "FMT", ""},
+		"FMT",
+		&Prog{
+			"ID",
+			"FMT",
+			"20230625050000",
+			"20230625060000",
+			"Title",
+			"Keyword",
+			"",
+			"Pfm",
+			[]string{},
+			ProgGenre{},
+			"",
+		},
+		true,
+	},
+	{
+		&Rule{"matchtests", "RadioProgram", []string{}, "Keyword", "Pfm", "FMT", ""},
+		"FMT",
+		&Prog{
+			"ID",
+			"FMT",
+			"20230625050000",
+			"20230625060000",
+			"Title", // title doesn't match
+			"Keyword",
+			"",
+			"Pfm",
+			[]string{},
+			ProgGenre{},
+			"",
+		},
+		false,
+	},
+	{
+		&Rule{"matchtests", "RadioProgram", []string{}, "", "Someone", "FMT", ""},
+		"FMT",
+		&Prog{
+			"ID",
+			"FMT",
+			"20230625050000",
+			"20230625060000",
+			"RadioProgram",
+			"",
+			"",
+			"Pfm", // Pfm doesn't match
+			[]string{},
+			ProgGenre{},
+			"",
+		},
+		false,
+	},
+}
+
+func TestMatch(t *testing.T) {
+	for _, tt := range matchtests {
+		got := tt.in.Match(tt.stationID, tt.p)
+		if got != tt.out {
+			t.Errorf("(%v).Match => %v, want %v", tt.in, got, tt.out)
+		}
+	}
+}
 
 var dowtests = []struct {
 	in  *Rule
@@ -8,17 +82,17 @@ var dowtests = []struct {
 	out bool
 }{
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"dowtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		"20230625050000", // sun
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"dowtests", "Title", []string{"sun"}, "Keyword", "Pfm", "StationID", "Window"},
 		"20230625050000", // sun
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{"mon", "tue"}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"dowtests", "Title", []string{"mon", "tue"}, "Keyword", "Pfm", "StationID", "Window"},
 		"20230625050000", // sun
 		false,
 	},
@@ -39,7 +113,7 @@ var keywordtests = []struct {
 	out  bool
 }{
 	{
-		&Rule{"Name", "Title", []string{}, "", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "", "Pfm", "StationID", "Window"},
 		&Prog{
 			"ID",
 			"StationID",
@@ -56,7 +130,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"ID",
 			"StationID",
@@ -73,7 +147,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"ID",
 			"StationID",
@@ -90,7 +164,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"ID",
 			"StationID",
@@ -107,7 +181,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"test",
 			"test",
@@ -124,7 +198,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"test",
 			"test",
@@ -141,7 +215,7 @@ var keywordtests = []struct {
 		true,
 	},
 	{
-		&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"keywordtests", "Title", []string{}, "Keyword", "Pfm", "StationID", "Window"},
 		&Prog{
 			"ID",
 			"StationID",
@@ -174,17 +248,17 @@ var pfmtests = []struct {
 	out bool
 }{
 	{
-		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "", "StationID", "Window"},
+		&Rule{"pfmtests", "Title", []string{"sun"}, "Keyword", "", "StationID", "Window"},
 		"Pfm",
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "Pfm", "", ""},
+		&Rule{"pfmtests", "", []string{}, "", "Pfm", "", ""},
 		"Pfm",
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "Pfm", "", ""},
+		&Rule{"pfmtests", "", []string{}, "", "Pfm", "", ""},
 		"Someone",
 		false,
 	},
@@ -205,17 +279,17 @@ var stationtests = []struct {
 	out       bool
 }{
 	{
-		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "Pfm", "FMT", "Window"},
+		&Rule{"stationtests", "Title", []string{"sun"}, "Keyword", "Pfm", "FMT", "Window"},
 		"FMT",
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "", "", ""},
+		&Rule{"stationtests", "", []string{}, "", "", "", ""},
 		"FMT",
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "", "FMT", ""},
+		&Rule{"stationtests", "", []string{}, "", "", "FMT", ""},
 		"TBS",
 		false,
 	},
@@ -236,17 +310,17 @@ var titletests = []struct {
 	out   bool
 }{
 	{
-		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "Pfm", "FMT", "Window"},
+		&Rule{"titletests", "Title", []string{"sun"}, "Keyword", "Pfm", "FMT", "Window"},
 		"Title",
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "", "", ""},
+		&Rule{"titletests", "", []string{}, "", "", "", ""},
 		"Title",
 		true,
 	},
 	{
-		&Rule{"", "Title", []string{}, "", "", "FMT", ""},
+		&Rule{"titletests", "Title", []string{}, "", "", "FMT", ""},
 		"Radio",
 		false,
 	},
@@ -261,16 +335,50 @@ func TestMatchTitle(t *testing.T) {
 	}
 }
 
+var windowtests = []struct {
+	in  *Rule
+	ft  string
+	out bool
+}{
+	{
+		&Rule{"windowtests", "Title", []string{"sun"}, "Keyword", "Pfm", "FMT", ""},
+		"20230625050000",
+		true,
+	},
+	{
+		&Rule{"windowtests", "", []string{}, "", "", "", "24h"},
+		time.Now().Add(-1 * time.Hour).Format("20060102150405"),
+		true,
+	},
+	{
+		&Rule{"windowtests", "", []string{}, "", "", "", "24h"},
+		time.Now().Add(time.Duration(-48) * time.Hour).Format("20060102150405"),
+		false,
+	},
+}
+
+func TestMatchWindow(t *testing.T) {
+	Location, _ = time.LoadLocation(TZTokyo)
+	CurrentTime = time.Now().In(Location)
+
+	for _, tt := range windowtests {
+		got := tt.in.MatchWindow(tt.ft)
+		if got != tt.out {
+			t.Errorf("(%v).MatchWindow => %v, want %v", tt.in, got, tt.out)
+		}
+	}
+}
+
 var ruletests = []struct {
 	in  *Rule
 	out bool
 }{
 	{
-		&Rule{"Name", "Title", []string{"sun"}, "Keyword", "Pfm", "StationID", "Window"},
+		&Rule{"ruletests", "Title", []string{"sun"}, "Keyword", "Pfm", "StationID", "Window"},
 		true,
 	},
 	{
-		&Rule{"", "", []string{}, "", "", "", ""},
+		&Rule{"ruletests", "", []string{}, "", "", "", ""},
 		false,
 	},
 }
@@ -339,16 +447,16 @@ func TestHasRuleFor(t *testing.T) {
 	}{
 		{
 			Rules{
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
+				&Rule{"rulestests", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"rulestests", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			"FMT",
 			true,
 		},
 		{
 			Rules{
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
+				&Rule{"rulestests", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"rulestests", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			"MBS",
 			false,
@@ -363,26 +471,26 @@ func TestHasRuleFor(t *testing.T) {
 }
 
 func TestHasRuleWithoutStationID(t *testing.T) {
-	var rulestests = []struct {
+	var hrwsitests = []struct {
 		in  Rules
 		out bool
 	}{
 		{
 			Rules{
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "", "Window"},
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
+				&Rule{"hrwsitests", "Title", []string{}, "Keyword", "Pfm", "", "Window"},
+				&Rule{"hrwsitests", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			true,
 		},
 		{
 			Rules{
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
-				&Rule{"Name", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
+				&Rule{"hrwsitests", "Title", []string{}, "Keyword", "Pfm", "FMT", "Window"},
+				&Rule{"hrwsitests", "Title", []string{}, "Keyword", "Pfm", "TBS", "Window"},
 			},
 			false,
 		},
 	}
-	for _, tt := range rulestests {
+	for _, tt := range hrwsitests {
 		res := tt.in.HasRuleWithoutStationID()
 		if tt.out != res {
 			t.Errorf("(%v).HasRuleWithoutStationID() => %v, want %v", tt.in, res, tt.out)

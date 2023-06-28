@@ -52,20 +52,8 @@ type Rule struct {
 // 4. match the criteria
 func (r *Rule) Match(stationID string, p *Prog) bool {
 	// 1. check Window
-	if r.HasWindow() {
-		startTime, err := time.ParseInLocation(DatetimeLayout, p.Ft, Location)
-		if err != nil {
-			log.Printf("invalid start time format '%s': %s", p.Ft, err)
-			return false
-		}
-		fetchWindow, err := time.ParseDuration(r.Window)
-		if err != nil {
-			log.Printf("parsing [%s].past failed: %v (using 24h)", r.Name, err)
-			fetchWindow = time.Hour * 24
-		}
-		if startTime.Add(fetchWindow).Before(CurrentTime) {
-			return false // skip before the fetch window
-		}
+	if !r.MatchWindow(p.Ft) {
+		return false
 	}
 	// 2. check dow
 	if !r.MatchDoW(p.Ft) {
@@ -145,7 +133,7 @@ func (r *Rule) MatchKeyword(p *Prog) bool {
 		log.Printf("rule[%s] matched with pfm: '%s'", r.Name, p.Pfm)
 		return true
 	} else if strings.Contains(p.Info, r.Keyword) {
-		log.Printf("rule[%s] matched with info: \n%s", r.Name, strings.ReplaceAll(p.Info, "\n", ""))
+		log.Printf("rule[%s] matched with info: %s", r.Name, strings.ReplaceAll(p.Info, "\n", ""))
 		return true
 	} else if strings.Contains(p.Desc, r.Keyword) {
 		log.Printf("rule[%s] matched with desc: '%s'", r.Name, strings.ReplaceAll(p.Desc, "\n", ""))
@@ -190,6 +178,27 @@ func (r *Rule) MatchTitle(title string) bool {
 		return true
 	}
 	return false
+}
+
+func (r *Rule) MatchWindow(ft string) bool {
+	if !r.HasWindow() {
+		return true
+	}
+	startTime, err := time.ParseInLocation(DatetimeLayout, ft, Location)
+	if err != nil {
+		log.Printf("invalid start time format '%s': %s", ft, err)
+		return false
+	}
+	fetchWindow, err := time.ParseDuration(r.Window)
+	if err != nil {
+		log.Printf("parsing [%s].window failed: %v (using 24h)", r.Name, err)
+		fetchWindow = time.Hour * 24
+	}
+	if startTime.Add(fetchWindow).Before(CurrentTime) {
+		return false // skip the program outside the fetch window
+	}
+
+	return true
 }
 
 func (r *Rule) SetName(name string) {
