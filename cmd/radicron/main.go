@@ -28,9 +28,9 @@ func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	rules := radicron.Rules{}
 	cwd, _ := os.Getwd()
 
-	// check ${RADIGO_HOME}
-	if os.Getenv("RADIGO_HOME") == "" {
-		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "downloads"))
+	// check ${RADICRON_HOME}
+	if os.Getenv("RADICRON_HOME") == "" {
+		os.Setenv("RADICRON_HOME", filepath.Join(cwd, "radiko"))
 	}
 
 	// load params from a config file
