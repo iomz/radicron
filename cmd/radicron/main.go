@@ -28,9 +28,9 @@ func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	rules := radicron.Rules{}
 	cwd, _ := os.Getwd()
 
-	// check ${RADIGO_HOME}
-	if os.Getenv("RADIGO_HOME") == "" {
-		os.Setenv("RADIGO_HOME", filepath.Join(cwd, "downloads"))
+	// check ${RADICRON_HOME}
+	if os.Getenv("RADICRON_HOME") == "" {
+		os.Setenv("RADICRON_HOME", filepath.Join(cwd, "radiko"))
 	}
 
 	// load params from a config file
@@ -58,8 +58,12 @@ func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	viper.SetDefault("area-id", currentAreaID)
 	// set the default extra stations
 	viper.SetDefault("extra-stations", []string{})
+	// set the default ignore stations
+	viper.SetDefault("ignore-stations", []string{})
 	// set the default file-format as aac
 	viper.SetDefault("file-format", radigo.AudioFormatAAC)
+	// set the default minimum-output-size as 1MB
+	viper.SetDefault("minimum-output-size", radicron.DefaultMinimumOutputSize)
 
 	fileFormat := viper.GetString("file-format")
 
@@ -71,14 +75,19 @@ func reload(ctx context.Context, filename string) (radicron.Rules, error) {
 	// load the available station for AreaID
 	areaID := viper.GetString("area-id")
 
-	// add extra stations
+	// extra/ignore stations
 	extraStations := viper.GetStringSlice("extra-stations")
+	ignoreStations := viper.GetStringSlice("ignore-stations")
+
+	minimumOutputSize := viper.GetInt64("minimum-output-size")
 
 	// save the asset in the current context
 	asset := radicron.GetAsset(ctx)
 	asset.OutputFormat = fileFormat
+	asset.MinimumOutputSize = minimumOutputSize * radicron.Kilobytes * radicron.Kilobytes
 	asset.LoadAvailableStations(areaID)
 	asset.AddExtraStations(extraStations)
+	asset.RemoveIgnoreStations(ignoreStations)
 
 	// load rules from the file
 	for name := range viper.GetStringMap("rules") {

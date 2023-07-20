@@ -11,6 +11,10 @@ const (
 	DefaultInitialDelaySeconds = 60
 	// DefaultInterval to fetch the programs
 	DefaultInterval = "168h"
+	// DefaultMinimumOutputSize
+	DefaultMinimumOutputSize = 1
+	// Environment Variable for RADICRON_HOME
+	EnvRadicronHome = "RADICRON_HOME"
 	// Language for ID3v2 tags
 	ID3v2LangJPN = "jpn"
 	// Kilobytes for the metric bytes
@@ -19,8 +23,6 @@ const (
 	MaxConcurrency = 64
 	// MaxRetryAttempts for BackOffDelay
 	MaxRetryAttempts = 8
-	// MinimumOutputSize in bytes for the downloaded audio
-	MinimumOutputSize = 3 * Kilobytes * Kilobytes
 	// OneDay is 24 hours
 	OneDay = 24
 	// OutputDatetimeLayout for downloaded files

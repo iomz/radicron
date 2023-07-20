@@ -51,6 +51,9 @@ Create a configuration file (`config.yml`) to define rules for recording:
 area-id: JP13 # if unset, default to "your" region
 extra-stations:
   - ALPHA-STATION # include stations not in your region
+ignore-stations:
+  - JOAK # ignore stations from search
+minimum-output-size: 2 # do not save an audio below this size (in MB), default is 1 (MB)
 rules:
   airship: # name your rule as you like
     station-id: FMT # (optional) the staion_id, if not available by default, automatically add this station to the watch list
@@ -60,33 +63,28 @@ rules:
     window: 48h # only within the past window from the current time
   hiccorohee:
     pfm: "ヒコロヒー" # search by pfm
-  watchman:
+  trad:
     dow: # filter by day of the week (e.g, Mon, tue, WED)
-      - fri
-    pfm: "宇多丸"
-    station-id: TBS
+      - wed
+      - thu
+    station-id: FMT
+    title: "THE TRAD"
 ```
 
-In addition, set `${RADIGO_HOME}` to set the download directory.
+In addition, set `${RADICRON_HOME}` to set the download directory.
 
 ## Usage
 
 ```bash
-mkdir -p ./downloads && RADIGO_HOME=./downloads radicron -c config.yml
+mkdir -p ./radiko/{downloads,tmp} && RADICRON_HOME=./radiko radicron -c config.yml
 ```
 
 ### Try with Docker
 
-By default, it mounts `./config.yml` and `./downloads` to the container.
+By default, it mounts `./config.yml` and `./radiko` to the container.
 
 ```console
 docker compose up
-```
-
-To set the ownership of the downloaded files right, run with `$UID` and `$GID` environment variables:
-
-```console
-UID=$(id -u) GID=$(id -g) docker compose up -d
 ```
 
 ## Build the image yourself
