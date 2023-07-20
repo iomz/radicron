@@ -15,7 +15,7 @@ import (
 func TestNewAsset(t *testing.T) {
 	const nAreas = 47
 	const nRegions = 7
-	const nStations = 111
+	const nStations = 110
 	client, err := radiko.New("")
 	if err != nil {
 		t.Error(err)
@@ -150,7 +150,6 @@ func TestGetStationIDsByAreaID(t *testing.T) {
 				"FMJ",
 				"FMT",
 				"INT",
-				"JOAB",
 				"JOAK",
 				"JOAK-FM",
 				"JORF",
