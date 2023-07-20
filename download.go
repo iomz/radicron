@@ -185,7 +185,7 @@ func downloadProgram(
 		return
 	}
 
-	aacDir, err := output.TempAACDir()
+	aacDir, err := tempAACDir()
 	if err != nil {
 		log.Printf("failed to create the aac dir: %s", err)
 		return
@@ -287,6 +287,16 @@ func getURI(input io.Reader) (string, error) {
 		return "", errors.New("invalid m3u8 format")
 	}
 	return p.Variants[0].URI, nil
+}
+
+// tempAACDir creates a dir to store temporary aac files
+func tempAACDir() (string, error) {
+	aacDir, err := os.MkdirTemp("", "aac")
+	if err != nil {
+		return "", err
+	}
+
+	return aacDir, nil
 }
 
 // timeshiftProgM3U8 gets playlist.m3u8 for a Prog
