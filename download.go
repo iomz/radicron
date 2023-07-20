@@ -223,7 +223,8 @@ func downloadProgram(
 		return
 	}
 
-	if info.Size() < int64(MinimumOutputSize) {
+	asset := GetAsset(ctx)
+	if info.Size() < asset.MinimumOutputSize {
 		log.Printf("the output file is too small: %v MB", float32(info.Size())/Kilobytes/Kilobytes)
 		err = os.Remove(output.AbsPath())
 		if err != nil {
@@ -231,7 +232,6 @@ func downloadProgram(
 			return
 		}
 		next := time.Now().In(Location).Add(BufferMinutes * time.Minute)
-		asset := GetAsset(ctx)
 		asset.NextFetchTime = &next
 		log.Printf("removed the file, retry downloading at %v", next)
 		return

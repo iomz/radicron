@@ -45,6 +45,8 @@ type Asset struct {
 	Base64Key         string
 	Coordinates       Coordinates
 	DefaultClient     *radiko.Client
+	// MinimumOutputSize in bytes for the downloaded audio
+	MinimumOutputSize int64
 	NextFetchTime     *time.Time
 	OutputFormat      string
 	Regions           Regions
@@ -196,6 +198,24 @@ func (a *Asset) NewDevice(areaID string) (*Device, error) {
 	// save the device for areaID
 	a.AreaDevices[areaID] = device
 	return device, nil
+}
+
+// RemoveIgnoreStations remove stations from AvailableStations
+func (a *Asset) RemoveIgnoreStations(is []string) {
+	for _, s := range is {
+		remove := -1
+		for i, as := range a.AvailableStations {
+			if as == s {
+				remove = i
+				break
+			}
+		}
+		if remove != -1 {
+			a.AvailableStations = append(
+				a.AvailableStations[:remove],
+				a.AvailableStations[remove+1:]...)
+		}
+	}
 }
 
 // UnmarshalJSON loads up Coordinates with Regions
