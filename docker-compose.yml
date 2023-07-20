@@ -5,7 +5,7 @@ services:
     image: ghcr.io/iomz/radicron:latest
     container_name: radicron
     restart: unless-stopped
-    user: "$UID:$GID"
+    user: 1000:1000
     volumes:
       - ./config.yml:/app/config.yml
       - ./downloads:/downloads
